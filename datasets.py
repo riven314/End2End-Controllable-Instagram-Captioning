@@ -35,6 +35,10 @@ class CaptionDataset(Dataset):
         with open(os.path.join(data_folder, self.split + '_CAPLENS_' + data_name + '.json'), 'r') as j:
             self.caplens = json.load(j)
 
+        # load style factors
+        with open(os.path.join(data_folder, self.split + '_STYLES_' + data_name + '.json'), 'r') as j:
+            self.styles = json.load(j)
+
         # PyTorch transformation pipeline for the image (normalizing, etc.)
         self.transform = transform
 
@@ -51,13 +55,17 @@ class CaptionDataset(Dataset):
 
         caplen = torch.LongTensor([self.caplens[i]])
 
+        # load in style factors
+        len_class = self.styles[i]['length_class']
+        sentence_length = torch.LongTensor([len_class])
+
         if self.split is 'TRAIN':
-            return img, caption, caplen
+            return img, caption, caplen, sentence_length
         else:
             # For validation of testing, also return all 'captions_per_image' captions to find BLEU-4 score
             all_captions = torch.LongTensor(
                 self.captions[((i // self.cpi) * self.cpi):(((i // self.cpi) * self.cpi) + self.cpi)])
-            return img, caption, caplen, all_captions
+            return img, caption, caplen, all_captions, sentence_length
 
     def __len__(self):
         return self.dataset_size

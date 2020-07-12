@@ -11,7 +11,7 @@ from utils import *
 from nltk.translate.bleu_score import corpus_bleu
 
 # Data parameters
-data_folder = './data/meta_wostyle/data_trial'  # folder with data files saved by create_input_files.py
+data_folder = './data/meta_wstyle/data_trial'  # folder with data files saved by create_input_files.py
 data_name = 'flickr8k_1_cap_per_img_5_min_word_freq'  # base name shared by data files
 
 # Model parameters
@@ -96,7 +96,7 @@ def main():
         batch_size=batch_size, shuffle=True, num_workers=workers, pin_memory=True)
     val_loader = torch.utils.data.DataLoader(
         CaptionDataset(data_folder, data_name, 'VAL', transform=transforms.Compose([normalize])),
-        batch_size=batch_size, shuffle=True, num_workers=workers, pin_memory=True)
+        batch_size=batch_size, shuffle=False, num_workers=workers, pin_memory=True)
 
     # Epochs
     for epoch in range(start_epoch, epochs):
@@ -162,17 +162,18 @@ def train(train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_
     start = time.time()
 
     # Batches
-    for i, (imgs, caps, caplens) in enumerate(train_loader):
+    for i, (imgs, caps, caplens, len_class) in enumerate(train_loader):
         data_time.update(time.time() - start)
 
         # Move to GPU, if available
         imgs = imgs.to(device)
         caps = caps.to(device)
         caplens = caplens.to(device)
+        len_class = len_class.to(device)
 
         # Forward prop.
         imgs = encoder(imgs)
-        scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens)
+        scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens, len_class)
 
         # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
         targets = caps_sorted[:, 1:]
@@ -254,17 +255,18 @@ def validate(val_loader, encoder, decoder, criterion):
     # solves the issue #57
     with torch.no_grad():
         # Batches
-        for i, (imgs, caps, caplens, allcaps) in enumerate(val_loader):
+        for i, (imgs, caps, caplens, allcaps, len_class) in enumerate(val_loader):
 
             # Move to device, if available
             imgs = imgs.to(device)
             caps = caps.to(device)
             caplens = caplens.to(device)
+            len_class = len_class.to(device)
 
             # Forward prop.
             if encoder is not None:
                 imgs = encoder(imgs)
-            scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens)
+            scores, caps_sorted, decode_lengths, alphas, sort_ind = decoder(imgs, caps, caplens, len_class)
 
             # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
             targets = caps_sorted[:, 1:]

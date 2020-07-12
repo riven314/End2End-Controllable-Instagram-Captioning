@@ -165,14 +165,14 @@ class DecoderWithAttention(nn.Module):
         c = self.init_c(mean_encoder_out)
         return h, c
 
-    def forward(self, encoder_out, encoded_captions, caption_lengths):
+    def forward(self, encoder_out, encoded_captions, caption_lengths, length_class):
         """
         Forward propagation.
 
         :param encoder_out: encoded images, a tensor of dimension (batch_size, enc_image_size, enc_image_size, encoder_dim)
         :param encoded_captions: encoded captions, a tensor of dimension (batch_size, max_caption_length)
         :param caption_lengths: caption lengths, a tensor of dimension (batch_size, 1)
-        :param length_classes: a Long tensor of dim (batch_size, 3)
+        :param length_class: list of length class, a Long tensor of dim (batch_size)
         :return: scores for vocabulary, sorted encoded captions, decode lengths, weights, sort indices
         """
 
@@ -188,13 +188,14 @@ class DecoderWithAttention(nn.Module):
         caption_lengths, sort_ind = caption_lengths.squeeze(1).sort(dim=0, descending=True)
         encoder_out = encoder_out[sort_ind]
         encoded_captions = encoded_captions[sort_ind]
+        length_class = length_class[sort_ind]
 
         # Embedding
         embeddings = self.embedding(encoded_captions)  # (batch_size, max_caption_length, embed_dim)
 
         # style embedding
-        length_classes = torch.randint(low = 0, high = 2, size = (batch_size,)).to(torch.device('cuda'))
-        style_embedding = self.length_class_embedding(length_classes)
+        length_class = length_class.squeeze()
+        style_embedding = self.length_class_embedding(length_class)
 
         # Initialize LSTM state
         h, c = self.init_hidden_state(encoder_out)  # (batch_size, decoder_dim)
@@ -210,6 +211,7 @@ class DecoderWithAttention(nn.Module):
         # At each time-step, decode by
         # attention-weighing the encoder's output based on the decoder's previous hidden state output
         # then generate a new word in the decoder with the previous word and the attention weighted encoding
+
         for t in range(max(decode_lengths)):
             
             batch_size_t = sum([l > t for l in decode_lengths])
