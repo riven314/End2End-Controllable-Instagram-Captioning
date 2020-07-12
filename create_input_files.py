@@ -1,11 +1,15 @@
 from utils import create_input_files
 
+IMG_DIR = '/media/alex/Data/personal/Project/MadeWithML_Incubator/data/instagram/images'
+JSON_PATH = 'data/ig_json/trial.json'
+OUT_DIR = './data/data_trial'
+
 if __name__ == '__main__':
     # Create input files (along with word map)
-    create_input_files(dataset='coco',
-                       karpathy_json_path='../caption data/dataset_coco.json',
-                       image_folder='/media/ssd/caption data/',
-                       captions_per_image=5,
-                       min_word_freq=5,
-                       output_folder='/media/ssd/caption data/',
-                       max_len=50)
+    create_input_files(dataset = 'flickr8k',
+                       karpathy_json_path = JSON_PATH,
+                       image_folder = IMG_DIR,
+                       captions_per_image = 1,
+                       min_word_freq = 5,
+                       output_folder = OUT_DIR,
+                       max_len = 50)

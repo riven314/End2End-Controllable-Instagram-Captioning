@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import skimage.transform
 import argparse
-from scipy.misc import imread, imresize
+#from scipy.misc import imread, imresize
+from cv2 import imread, resize
 from PIL import Image
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -30,10 +31,11 @@ def caption_image_beam_search(encoder, decoder, image_path, word_map, beam_size=
 
     # Read image and process
     img = imread(image_path)
+    img = img[:, :, ::-1] # BGR to RGB
     if len(img.shape) == 2:
         img = img[:, :, np.newaxis]
         img = np.concatenate([img, img, img], axis=2)
-    img = imresize(img, (256, 256))
+    img = resize(img, (256, 256))
     img = img.transpose(2, 0, 1)
     img = img / 255.
     img = torch.FloatTensor(img).to(device)
@@ -164,6 +166,7 @@ def visualize_att(image_path, seq, alphas, rev_word_map, smooth=True):
 
     words = [rev_word_map[ind] for ind in seq]
 
+    plt.figure(figsize=(20 , 10))
     for t in range(len(words)):
         if t > 50:
             break

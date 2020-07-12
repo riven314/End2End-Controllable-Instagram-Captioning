@@ -10,7 +10,7 @@ def read_txt(path):
 
 def write_json(obj, json_path):
     with open(json_path, 'w') as f:
-        json.dump(obj, f)
+        json.dump(obj, f, indent = 2)
     return None
 
 
