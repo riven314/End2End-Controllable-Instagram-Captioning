@@ -1,9 +1,15 @@
 __pycache__
+
 data/__pycache__
 data/Flickr8k_Data
 data/*.json
 data/*/*.json
 data/*.hdf5
 data/*/*.hdf5
+data/meta_wostyle
+data/meta_wstyle
+
+ckpts
+
 .vscode
 .idea

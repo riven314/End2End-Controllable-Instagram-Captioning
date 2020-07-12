@@ -227,18 +227,22 @@ def save_checkpoint(data_name, epoch, epochs_since_improvement, encoder, decoder
     :param bleu4: validation BLEU-4 score for this epoch
     :param is_best: is this checkpoint the best so far?
     """
+    encoder_optimizer_ckpt = None if encoder_optimizer is None else encoder_optimizer.state_dict()
+
     state = {'epoch': epoch,
              'epochs_since_improvement': epochs_since_improvement,
              'bleu-4': bleu4,
-             'encoder': encoder,
-             'decoder': decoder,
-             'encoder_optimizer': encoder_optimizer,
-             'decoder_optimizer': decoder_optimizer}
-    filename = 'checkpoint_' + data_name + '.pth.tar'
-    torch.save(state, filename)
+             'encoder': encoder.state_dict(),
+             'decoder': decoder.state_dict(),
+             'encoder_optimizer': encoder_optimizer_ckpt,
+             'decoder_optimizer': decoder_optimizer.state_dict()}
+             
+    filename = 'checkpoint_' + data_name + '.pth'
+    torch.save(state, f'/ckpts/{filename}')
     # If this checkpoint is the best so far, store a copy so it doesn't get overwritten by a worse checkpoint
     if is_best:
-        torch.save(state, 'BEST_' + filename)
+        filename = f'BEST_{filename}'
+        torch.save(state, f'/ckpts/{filename}')
 
 
 class AverageMeter(object):

@@ -21,10 +21,10 @@ vocab = read_txt(VOCAB_PATH)
 
 
 def get_input_json(txt_ls, vocab, data_split, json_path):
+    outs = []
     for txt_data_path, data_type in zip(txt_ls, data_split):
         txt_data = read_txt(txt_data_path)
 
-        outs = []
         for i, sample in tqdm(enumerate(txt_data)):
             fn, token_seq, word_seq = decode_one_sample(sample, vocab)
             out = {'sentences': [{'tokens': word_seq}], 
