@@ -21,14 +21,21 @@ train_ds = CaptionDataset(data_folder, data_name, 'TRAIN',
 val_ds = CaptionDataset(data_folder, data_name, 'VAL', 
                         transform=transforms.Compose([normalize]))
 
-train_dl = DataLoader(train_ds, batch_size = 8, shuffle = False, 
+train_dl = DataLoader(train_ds, batch_size = 8, shuffle = True, 
                       num_workers = 1, pin_memory = True)
 val_dl = DataLoader(val_ds, batch_size = 8, shuffle = False, 
                     num_workers = 1, pin_memory = True)
 
-train_sample = next(iter(train_dl))
-val_sample = next(iter(val_dl))
+# QQQ@Alex: are caption length sorted in dataloader in batch order?
+train_sample_dict = dict()
+val_sample_dict = dict()
 
-assert len(train_sample) == 4
-assert len(val_sample) == 5
+for i, (train_sample, val_sample) in enumerate(zip(train_dl, val_dl)):
+    if i == 6:
+        break
+    train_sample_dict[i] = train_sample
+    val_sample_dict[i] = val_sample
+    
+    assert len(train_sample) == 4
+    assert len(val_sample) == 5
     

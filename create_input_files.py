@@ -1,7 +1,7 @@
 from utils import create_input_files
 
 IMG_DIR = '/media/alex/Data/personal/Project/MadeWithML_Incubator/data/instagram/images'
-JSON_PATH = 'data/ig_json/trial.json'
+JSON_PATH = 'data/ig_json/trial_vary_len_class.json'
 OUT_DIR = './data/meta_wstyle/data_trial'
 
 if __name__ == '__main__':
