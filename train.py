@@ -11,7 +11,7 @@ from utils import *
 from nltk.translate.bleu_score import corpus_bleu
 
 # Data parameters
-data_folder = './data/meta_wostyle/data_trial'  # folder with data files saved by create_input_files.py
+data_folder = './data/meta_wostyle/data_full'  # folder with data files saved by create_input_files.py
 data_name = 'flickr8k_1_cap_per_img_5_min_word_freq'  # base name shared by data files
 
 # Model parameters
@@ -26,7 +26,7 @@ cudnn.benchmark = True  # set to true only if inputs to model are fixed size; ot
 start_epoch = 0
 epochs = 120  # number of epochs to train for (if early stopping is not triggered)
 epochs_since_improvement = 0  # keeps track of number of epochs since there's been an improvement in validation BLEU
-batch_size = 32
+batch_size = 128
 workers = 1  # for data-loading; right now, only 1 works with h5py
 
 encoder_lr = 1e-4  # learning rate for encoder if fine-tuning
@@ -36,10 +36,11 @@ decoder_lr = 4e-3
 grad_clip = 5.  # clip gradients at an absolute value of
 alpha_c = 1.  # regularization parameter for 'doubly stochastic attention', as in the paper
 best_bleu4 = 0.  # BLEU-4 score right now
-print_freq = 100  # print training/validation stats every __ batches
+print_freq = 5  # print training/validation stats every __ batches
 fine_tune_encoder = False  # fine-tune encoder?
 checkpoint = None  # path to checkpoint, None if none
-
+tolerance_epoch = 4 # failure to improve with consecutive epochs would terminate the training
+adjust_epoch = 2 # adjust learning rate for consecutive epoch failure to improve
 
 def main():
     """
@@ -58,7 +59,7 @@ def main():
         decoder = DecoderWithAttention(attention_dim=attention_dim,
                                        embed_dim=emb_dim,
                                        decoder_dim=decoder_dim,
-                                       vocab_size=len(word_map),
+                   	                   vocab_size=len(word_map),
                                        dropout=dropout)
         decoder_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, decoder.parameters()),
                                              lr=decoder_lr)
@@ -102,9 +103,9 @@ def main():
     for epoch in range(start_epoch, epochs):
 
         # Decay learning rate if there is no improvement for 8 consecutive epochs, and terminate training after 20
-        if epochs_since_improvement == 20:
+        if epochs_since_improvement == tolerance_epoch:
             break
-        if epochs_since_improvement > 0 and epochs_since_improvement % 8 == 0:
+        if epochs_since_improvement > 0 and epochs_since_improvement % adjust_epoch == 0:
             adjust_learning_rate(decoder_optimizer, 0.8)
             if fine_tune_encoder:
                 adjust_learning_rate(encoder_optimizer, 0.8)
