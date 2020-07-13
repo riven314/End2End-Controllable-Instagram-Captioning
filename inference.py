@@ -64,7 +64,7 @@ def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n =
                             pin_memory = True)
 
     results = []
-    for i, (image, caps, _, allcaps, _, img_ids) in enumerate(tqdm(dataloader)):
+    for i, (image, caps, _, allcaps, gt_len_class, img_ids) in enumerate(tqdm(dataloader)):
         
         if i == n:
             break
@@ -179,7 +179,7 @@ def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n =
         predict = ' '.join([rev_word_map[s] for s in predict])
         
         result = {
-            'img_id': img_ids[0], 'length_class': length_class, 'data_type': data_type,
+            'img_id': img_ids[0], 'length_class': int(gt_len_class.cpu().squeeze()), 'data_type': data_type,
             'gt_caption': img_caption, f'length_class_{length_class}': predict
             }
         results.append(result)
@@ -188,7 +188,7 @@ def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n =
 
 if __name__ == '__main__':
     beam_size = 10
-    data_type = 'TEST'
+    data_type = 'VAL'
     result_csv = f'./ckpts/v1/benchmarks_{data_type.lower()}.csv'
     
     agg_results = []
