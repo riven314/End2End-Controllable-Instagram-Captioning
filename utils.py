@@ -43,12 +43,15 @@ def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_i
         data = json.load(j)
 
     # Read image paths and captions for each image
+    train_id = []
     train_image_paths = []
     train_image_captions = []
     train_styles = []
+    val_id = []
     val_image_paths = []
     val_image_captions = []
     val_styles = []
+    test_id = []
     test_image_paths = []
     test_image_captions = []
     test_styles = []
@@ -76,14 +79,17 @@ def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_i
         style_dict = {'length_class': length_class}
 
         if img['split'] in {'train', 'restval'}:
+            train_id.append(img['filename'])
             train_image_paths.append(path)
             train_image_captions.append(captions)
             train_styles.append(style_dict)
         elif img['split'] in {'val'}:
+            val_id.append(img['filename'])
             val_image_paths.append(path)
             val_image_captions.append(captions)
             val_styles.append(style_dict)
         elif img['split'] in {'test'}:
+            test_id.append(img['filename'])
             test_image_paths.append(path)
             test_image_captions.append(captions)
             test_styles.append(style_dict)
@@ -107,6 +113,14 @@ def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_i
     # Save word map to a JSON
     with open(os.path.join(output_folder, 'WORDMAP_' + base_filename + '.json'), 'w') as j:
         json.dump(word_map, j)
+
+    # Save image id
+    with open(os.path.join(output_folder, 'TRAIN_ID_' + base_filename + '.json'), 'w') as j:
+        json.dump(train_id, j) 
+    with open(os.path.join(output_folder, 'VAL_ID_' + base_filename + '.json'), 'w') as j:
+        json.dump(val_id, j) 
+    with open(os.path.join(output_folder, 'TEST_ID_' + base_filename + '.json'), 'w') as j:
+        json.dump(test_id, j) 
 
     # save styles data
     with open(os.path.join(output_folder, 'TRAIN_STYLES_' + base_filename + '.json'), 'w') as j:

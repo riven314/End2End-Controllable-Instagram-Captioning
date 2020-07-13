@@ -36,6 +36,6 @@ for i, (train_sample, val_sample) in enumerate(zip(train_dl, val_dl)):
     train_sample_dict[i] = train_sample
     val_sample_dict[i] = val_sample
     
-    assert len(train_sample) == 4
-    assert len(val_sample) == 5
+    assert len(train_sample) == 6
+    assert len(val_sample) == 6
     
