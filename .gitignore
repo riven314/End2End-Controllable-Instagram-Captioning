@@ -6,6 +6,7 @@ data/*.json
 data/*/*.json
 data/*.hdf5
 data/*/*.hdf5
+data/*.csv
 data/meta_wostyle
 data/meta_wstyle
 
