@@ -38,7 +38,8 @@ alpha_c = 1.  # regularization parameter for 'doubly stochastic attention', as i
 best_bleu4 = 0.  # BLEU-4 score right now
 print_freq = 5  # print training/validation stats every __ batches
 fine_tune_encoder = False  # fine-tune encoder?
-checkpoint = './ckpts/BEST_checkpoint_flickr8k_1_cap_per_img_5_min_word_freq.pth'  # path to checkpoint, None if none
+#checkpoint = './ckpts/BEST_checkpoint_flickr8k_1_cap_per_img_5_min_word_freq.pth'  # path to checkpoint, None if none
+checkpoint = None
 tolerance_epoch = 10 # failure to improve with consecutive epochs would terminate the training
 adjust_epoch = 2 # adjust learning rate for consecutive epoch failure to improve
 
