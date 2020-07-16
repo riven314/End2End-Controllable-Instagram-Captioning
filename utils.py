@@ -162,7 +162,7 @@ def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_i
                 # Read images
                 #img = imread(impaths[i])
                 #img = Image.open(impaths[1])
-                img = cv2.imread(impaths[1])
+                img = cv2.imread(path)
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 if len(img.shape) == 2:
                     img = img[:, :, np.newaxis]
