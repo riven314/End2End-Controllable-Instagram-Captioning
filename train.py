@@ -56,28 +56,35 @@ def main():
         word_map = json.load(j)
 
     # Initialize / load checkpoint
-    if checkpoint is None:
-        decoder = DecoderWithAttention(attention_dim=attention_dim,
-                                       embed_dim=emb_dim,
-                                       decoder_dim=decoder_dim,
-                                       vocab_size=len(word_map),
-                                       dropout=dropout)
-        decoder_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, decoder.parameters()),
-                                             lr=decoder_lr)
-        encoder = Encoder()
-        encoder.fine_tune(fine_tune_encoder)
-        encoder_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, encoder.parameters()),
-                                             lr=encoder_lr) if fine_tune_encoder else None
+    decoder = DecoderWithAttention(attention_dim=attention_dim,
+                                   embed_dim=emb_dim,
+                                   decoder_dim=decoder_dim,
+               	                   vocab_size=len(word_map),
+                                   dropout=dropout)
+    decoder_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, decoder.parameters()),
+                                         lr=decoder_lr)
+    encoder = Encoder()
+    encoder.fine_tune(fine_tune_encoder)
+    encoder_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, encoder.parameters()),
+                                         lr=encoder_lr) if fine_tune_encoder else None
 
-    else:
+    if checkpoint is not None:
+        print(f'picking up checkpoint: {checkpoint}')
         checkpoint = torch.load(checkpoint)
         start_epoch = checkpoint['epoch'] + 1
         epochs_since_improvement = checkpoint['epochs_since_improvement']
         best_bleu4 = checkpoint['bleu-4']
-        decoder = checkpoint['decoder']
-        decoder_optimizer = checkpoint['decoder_optimizer']
-        encoder = checkpoint['encoder']
-        encoder_optimizer = checkpoint['encoder_optimizer']
+        decoder.load_state_dict(checkpoint['decoder'])
+        decoder_optimizer.load_state_dict(checkpoint['decoder_optimizer'])
+        decoder_optimizer = torch.optim.Adam(
+                     params = filter(lambda p: p.requires_grad, decoder.parameters()),
+                     lr = decoder_optimizer.param_groups[0]['lr']
+                     )
+        encoder.load_state_dict(checkpoint['encoder'])
+        if encoder_optimizer is not None:
+            encoder_optimizer.load_state_dict(checkpoint['encoder_optimizer'])
+            encoder_optimizer = torch.optim.Adam(params = filter(lambda p: p.requires_grad, encoder.parameters()),
+                                                 lr = encoder_optimizer.param_groups[0]['lr'])
         if fine_tune_encoder is True and encoder_optimizer is None:
             encoder.fine_tune(fine_tune_encoder)
             encoder_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, encoder.parameters()),

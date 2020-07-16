@@ -10,7 +10,7 @@ from tqdm import tqdm
 from data.utils import read_txt, write_json, decode_one_sample
 
 
-ROOT = '/media/alex/Data/personal/Project/MadeWithML_Incubator/data/instagram'
+ROOT = '/userhome/34/h3509807/MadeWithML/data/Instagram'
 DATA_DIR = os.path.join(ROOT, 'caption_dataset')
 IMG_DIR = os.path.join(ROOT, 'images')
 VOCAB_PATH = os.path.join(DATA_DIR, '40000.vocab')

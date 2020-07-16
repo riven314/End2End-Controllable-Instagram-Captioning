@@ -1,8 +1,24 @@
+import os
+import json
+
 import torch
 from torch import nn
 import torchvision
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+def get_encoder_decoder(cfg):
+    with open(cfg.word_map_file, 'r') as f:
+        word_map = json.load(f)
+
+    encoder = Encoder()
+    decoder = DecoderWithAttention(attention_dim = cfg.attention_dim,
+                               embed_dim = cfg.emb_dim,
+                               decoder_dim = cfg.decoder_dim,
+                               vocab_size = cfg.len(word_map),
+                               dropout = cfg.dropout)
+    
+    
+
 
 
 class Encoder(nn.Module):
