@@ -10,7 +10,7 @@ from tqdm import tqdm
 from data.utils import read_txt, write_json, decode_one_sample
 
 
-ROOT = '/media/alex/Data/personal/Project/MadeWithML_Incubator/data/instagram'
+ROOT = '/userhome/34/h3509807/MadeWithML/data/Instagram'
 DATA_DIR = os.path.join(ROOT, 'caption_dataset')
 IMG_DIR = os.path.join(ROOT, 'images')
 VOCAB_PATH = os.path.join(DATA_DIR, '40000.vocab')
@@ -40,10 +40,10 @@ def get_input_json(txt_ls, vocab, data_split, json_path):
 
 
 if __name__ == '__main__':
-    tup = [('trial.txt', 'train'),
-           ('trial.txt', 'val'),
-           ('trial.txt', 'test')]
-    json_path = os.path.join(OUT_DIR, 'trial.json')
+    tup = [('train_mid.txt', 'train'),
+           ('test1_mid.txt', 'val'),
+           ('test2_mid.txt', 'test')]
+    json_path = os.path.join(OUT_DIR, 'mid.json')
     
     tup = [(os.path.join(DATA_DIR, txt_fn), data_type) for txt_fn, data_type in tup]
     txt_ls, data_split = zip(*tup)

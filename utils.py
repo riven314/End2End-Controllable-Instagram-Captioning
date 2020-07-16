@@ -1,18 +1,23 @@
 import os
-import numpy as np
-import h5py
 import json
-import torch
-#from scipy.misc import imread, imresize
-import cv2
-from PIL import Image
-from tqdm import tqdm
 from collections import Counter
 from random import seed, choice, sample
 
+#from scipy.misc import imread, imresize
+import cv2
+import h5py
+import torch
+from PIL import Image
+from tqdm import tqdm
+import pandas as pd
+import numpy as np
 
-def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_image, min_word_freq, output_folder,
-                       max_len=100):
+
+STYLE_META_FILE = '/media/alex/Data/personal/Project/MadeWithML_Incubator/data/instagram/partition/meta_data/v1/meta_all.csv'
+
+
+def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_image, 
+                       min_word_freq, output_folder, max_len = 100):
     """
     Creates input files for training, validation, and test data.
 
@@ -24,20 +29,32 @@ def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_i
     :param output_folder: folder to save files
     :param max_len: don't sample captions longer than this length
     """
-
     assert dataset in {'coco', 'flickr8k', 'flickr30k'}
+    
+    global STYLE_META_FILE
+    style_df = pd.read_csv(STYLE_META_FILE)
+
+    style_map = dict()
+    for img_id, length_class in zip(style_df.id, style_df.length_class):
+        style_map[img_id] = length_class
 
     # Read Karpathy JSON
     with open(karpathy_json_path, 'r') as j:
         data = json.load(j)
 
     # Read image paths and captions for each image
+    train_id = []
     train_image_paths = []
     train_image_captions = []
+    train_styles = []
+    val_id = []
     val_image_paths = []
     val_image_captions = []
+    val_styles = []
+    test_id = []
     test_image_paths = []
     test_image_captions = []
+    test_styles = []
     word_freq = Counter()
 
     for img in tqdm(data['images']):
@@ -51,23 +68,36 @@ def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_i
         if len(captions) == 0:
             continue
 
-        path = os.path.join(image_folder, img['filepath'], img['filename']) if dataset == 'coco' else os.path.join(
-            image_folder, img['filename'])
+        # extract image path
+        if dataset == 'coco':
+            path = os.path.join(image_folder, img['filepath'], img['filename'])
+        else: 
+            path = os.path.join(image_folder, img['filename'])
+
+        # extract styles
+        length_class = style_map[img['filename']]
+        style_dict = {'length_class': length_class}
 
         if img['split'] in {'train', 'restval'}:
+            train_id.append(img['filename'])
             train_image_paths.append(path)
             train_image_captions.append(captions)
+            train_styles.append(style_dict)
         elif img['split'] in {'val'}:
+            val_id.append(img['filename'])
             val_image_paths.append(path)
             val_image_captions.append(captions)
+            val_styles.append(style_dict)
         elif img['split'] in {'test'}:
+            test_id.append(img['filename'])
             test_image_paths.append(path)
             test_image_captions.append(captions)
+            test_styles.append(style_dict)
 
     # Sanity check
-    assert len(train_image_paths) == len(train_image_captions)
-    assert len(val_image_paths) == len(val_image_captions)
-    assert len(test_image_paths) == len(test_image_captions)
+    assert len(train_image_paths) == len(train_image_captions) == len(train_styles)
+    assert len(val_image_paths) == len(val_image_captions) == len(val_styles)
+    assert len(test_image_paths) == len(test_image_captions) == len(test_styles)
 
     # Create word map
     words = [w for w in word_freq.keys() if word_freq[w] > min_word_freq]
@@ -83,6 +113,22 @@ def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_i
     # Save word map to a JSON
     with open(os.path.join(output_folder, 'WORDMAP_' + base_filename + '.json'), 'w') as j:
         json.dump(word_map, j)
+
+    # Save image id
+    with open(os.path.join(output_folder, 'TRAIN_ID_' + base_filename + '.json'), 'w') as j:
+        json.dump(train_id, j) 
+    with open(os.path.join(output_folder, 'VAL_ID_' + base_filename + '.json'), 'w') as j:
+        json.dump(val_id, j) 
+    with open(os.path.join(output_folder, 'TEST_ID_' + base_filename + '.json'), 'w') as j:
+        json.dump(test_id, j) 
+
+    # save styles data
+    with open(os.path.join(output_folder, 'TRAIN_STYLES_' + base_filename + '.json'), 'w') as j:
+        json.dump(train_styles, j) 
+    with open(os.path.join(output_folder, 'VAL_STYLES_' + base_filename + '.json'), 'w') as j:
+        json.dump(val_styles, j) 
+    with open(os.path.join(output_folder, 'TEST_STYLES_' + base_filename + '.json'), 'w') as j:
+        json.dump(test_styles, j) 
 
     # Sample captions for each image, save images to HDF5 file, and captions and their lengths to JSON files
     seed(123)
@@ -116,7 +162,7 @@ def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_i
                 # Read images
                 #img = imread(impaths[i])
                 #img = Image.open(impaths[1])
-                img = cv2.imread(impaths[1])
+                img = cv2.imread(path)
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 if len(img.shape) == 2:
                     img = img[:, :, np.newaxis]
@@ -212,8 +258,8 @@ def clip_gradient(optimizer, grad_clip):
                 param.grad.data.clamp_(-grad_clip, grad_clip)
 
 
-def save_checkpoint(data_name, epoch, epochs_since_improvement, encoder, decoder, encoder_optimizer, decoder_optimizer,
-                    bleu4, is_best):
+def save_checkpoint(data_name, epoch, epochs_since_improvement, encoder, decoder, 
+                    encoder_optimizer, decoder_optimizer, save_dir, bleu4, is_best):
     """
     Saves model checkpoint.
 
@@ -238,11 +284,13 @@ def save_checkpoint(data_name, epoch, epochs_since_improvement, encoder, decoder
              'decoder_optimizer': decoder_optimizer.state_dict()}
              
     filename = 'checkpoint_' + data_name + '.pth'
-    torch.save(state, f'./ckpts/{filename}')
+    model_path = os.path.join(save_dir, filename)
+    torch.save(state, model_path)
     # If this checkpoint is the best so far, store a copy so it doesn't get overwritten by a worse checkpoint
     if is_best:
         filename = f'BEST_{filename}'
-        torch.save(state, f'./ckpts/{filename}')
+        model_path = os.path.join(save_dir, filename)
+        torch.save(state, model_path)
 
 
 class AverageMeter(object):

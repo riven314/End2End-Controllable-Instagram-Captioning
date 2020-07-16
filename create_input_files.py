@@ -1,8 +1,8 @@
 from utils import create_input_files
 
 IMG_DIR = '/media/alex/Data/personal/Project/MadeWithML_Incubator/data/instagram/images'
-JSON_PATH = 'data/ig_json/trial.json'
-OUT_DIR = './data/meta_wostyle/data_trial'
+JSON_PATH = 'data/ig_json/mid.json'
+OUT_DIR = './data/meta_wstyle/data_mid'
 
 if __name__ == '__main__':
     # Create input files (along with word map)
