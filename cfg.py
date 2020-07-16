@@ -1,6 +1,7 @@
 import torch
 
 class Config:
+    save_dir = './ckpts/v2'
     data_folder = 'data/meta_wstyle/data_mid'
     data_name = 'flickr8k_1_cap_per_img_5_min_word_freq'
     checkpoint_file = './ckpts/v1/BEST_checkpoint_flickr8k_1_cap_per_img_5_min_word_freq.pth'
@@ -25,9 +26,9 @@ class Config:
     best_bleu4 = 0.
     print_freq = 50
     checkpoint = None
-    tolerance_epoch = 4
+    tolerance_epoch = 8
     adjust_epoch = 2
-    adjust_step = 0.8
+    adjust_step = 0.6
 
     
     
