@@ -11,14 +11,20 @@ def get_encoder_decoder(cfg):
         word_map = json.load(f)
 
     encoder = Encoder()
+    encoder.fine_tune(cfg.fine_tune_encoder)
     decoder = DecoderWithAttention(attention_dim = cfg.attention_dim,
-                               embed_dim = cfg.emb_dim,
-                               decoder_dim = cfg.decoder_dim,
-                               vocab_size = cfg.len(word_map),
-                               dropout = cfg.dropout)
-    
-    
+                                   embed_dim = cfg.emb_dim,
+                                   decoder_dim = cfg.decoder_dim,
+                                   vocab_size = len(word_map),
+                                   dropout = cfg.dropout)
 
+    if cfg.checkpoint is not None:
+        assert os.path.isfile(cfg.checkpoint)
+        print(f'load in checkpoint: {cfg.checkpoint}')
+        checkpoint = torch.load(cfg.checkpoint)
+        encoder.load_state_dict(checkpoint['encoder'])
+        decoder.load_state_dict(checkpoint['decoder'])
+    return encoder, decoder
 
 
 class Encoder(nn.Module):

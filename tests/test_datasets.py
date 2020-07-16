@@ -1,7 +1,4 @@
 import os
-import sys
-path = os.path.join(os.getcwd(), '..')
-sys.path.append(path)
 
 import numpy as np
 import torchvision.transforms as transforms
