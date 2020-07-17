@@ -17,9 +17,9 @@ from utils import *
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-data_folder = 'data/meta_wstyle/data_mid'
+data_folder = 'data/meta_wostyle/data_full'
 data_name = 'flickr8k_1_cap_per_img_5_min_word_freq'
-checkpoint_file = './ckpts/v2/BEST_checkpoint_flickr8k_1_cap_per_img_5_min_word_freq.pth'
+checkpoint_file = './ckpts/BEST_checkpoint_flickr8k_1_cap_per_img_5_min_word_freq.pth'
 word_map_file = f'{data_folder}/WORDMAP_{data_name}.json'
 
 with open(word_map_file, 'r') as j:
@@ -31,7 +31,6 @@ emb_dim = 512
 decoder_dim = 512
 vocab_size = len(word_map) 
 dropout = 0.5
-
 
 encoder = Encoder()
 decoder = DecoderWithAttention(attention_dim = attention_dim,
@@ -49,11 +48,8 @@ encoder.eval()
 decoder.eval()
 
 
-def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n = -1):
+def run_test_per_beamsize_style(beam_size, data_type = 'TEST', n = -1):
     assert data_type in ['TRAIN', 'VAL', 'TEST']
-    assert length_class in [0, 1, 2]
-
-    len_class = torch.as_tensor([length_class]).long().to(device)
 
     normalizer = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                       std=[0.229, 0.224, 0.225])
@@ -72,7 +68,7 @@ def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n =
         image = image.to(device)  # (1, 3, 256, 256)
 
         encoder_out = encoder(image)  # (1, enc_image_size, enc_image_size, encoder_dim)
-        predict = decoder.beam_search(encoder_out, len_class, word_map, k = beam_size)
+        predict = decoder.beam_search(encoder_out, word_map, k = beam_size)
         predict = ' '.join([rev_word_map[s] for s in predict])
 
         # references
@@ -80,30 +76,26 @@ def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n =
         img_caption = [w for w in img_cap if w not in {word_map['<start>'], word_map['<end>'], word_map['<pad>']}]
         img_caption = ' '.join([rev_word_map[s] for s in img_caption])
 
-        result = {
-            'img_id': img_ids[0], 'length_class': int(gt_len_class.cpu().squeeze()), 'data_type': data_type,
-            'gt_caption': img_caption, f'length_class_{length_class}': predict
-            }
+        result = {'img_id': img_ids[0], 'data_type': data_type, 
+                  'gt_caption': img_caption, 'predict_caption': predict}
         results.append(result)
     return results
 
 
 if __name__ == '__main__':
     beam_size = 10
-    data_type = 'TEST'
-    result_csv = f'./ckpts/v2/benchmarks_{data_type.lower()}.csv'
+    data_type = 'TRAIN'
+    result_csv = f'./ckpts/benchmarks_{data_type.lower()}.csv'
     
     agg_results = []
-    for len_class in [0, 1, 2]:
-        print(f'beam size: {beam_size}, length class: {len_class}')
-        results = run_test_per_beamsize_style(beam_size, len_class, 
-                                              data_type = data_type, n = 200)
+    print(f'beam size: {beam_size}')
+    results = run_test_per_beamsize_style(beam_size, data_type = data_type, n = 200)
 
-        if agg_results == []:
-            agg_results = results
-        else:
-            for i in range(len(agg_results)):
-                agg_results[i].update(results[i])
+    if agg_results == []:
+        agg_results = results
+    else:
+        for i in range(len(agg_results)):
+            agg_results[i].update(results[i])
 
     result_df = pd.DataFrame(agg_results)
     result_df.to_csv(result_csv, index = False)

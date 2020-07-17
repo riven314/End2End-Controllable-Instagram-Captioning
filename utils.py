@@ -100,9 +100,6 @@ def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_i
     with open(os.path.join(output_folder, 'TEST_ID_' + base_filename + '.json'), 'w') as j:
         json.dump(test_id, j) 
     
-    from pdb import set_trace
-    set_trace()
-
     # Sample captions for each image, save images to HDF5 file, and captions and their lengths to JSON files
     seed(123)
     for impaths, imcaps, split in [(train_image_paths, train_image_captions, 'TRAIN'),

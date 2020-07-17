@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 from torch import nn
 import torchvision
 
@@ -213,7 +214,7 @@ class DecoderWithAttention(nn.Module):
 
         return predictions, encoded_captions, decode_lengths, alphas, sort_ind
 
-    def beam_search(self, encoder_out, len_class, word_map, k = 5):
+    def beam_search(self, encoder_out, word_map, k = 5):
         """
         :param encoder_out: float tensor, (1, enc_image_size, enc_image_size, encoder_dim)
         :param len_class: tensor, long tensor, (1, )
@@ -232,7 +233,7 @@ class DecoderWithAttention(nn.Module):
         encoder_out = encoder_out.expand(k, num_pixels, encoder_dim) # (k, num_pixels, encoder_dim)
 
         k_prev_words = torch.LongTensor([[word_map['<start>']]] * k).to(device)
-        top_k_scores = torch.zero(k, 1).to(device)
+        top_k_scores = torch.zeros(k, 1).to(device)
         seqs = k_prev_words
 
         complete_seqs, complete_seqs_scores = list(), list()
@@ -244,14 +245,12 @@ class DecoderWithAttention(nn.Module):
             while True:
                 # get all required embeddings
                 embeddings = self.embedding(k_prev_words).squeeze(1)
-                style_embedding = self.length_class_embedding(len_class)
-                style_embedding = style_embedding.expand(k, self.length_class_embed_dim)
                 awe, _ = self.attention(encoder_out, h)
                 gate = self.sigmoid(self.f_beta(h))
                 awe = gate * awe
 
                 # feed forward to get scores
-                h, c = self.decoder_step(torch.cat([embeddings, style_embedding, awe], dim = 1), (h, c)) # (total embedding dim, decoder_dim)
+                h, c = self.decode_step(torch.cat([embeddings, awe], dim = 1), (h, c)) # (total embedding dim, decoder_dim)
                 scores = self.fc(h)
                 scores = F.log_softmax(scores, dim = 1)
 

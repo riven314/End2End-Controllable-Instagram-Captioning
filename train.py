@@ -171,7 +171,7 @@ def train(train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_
     start = time.time()
 
     # Batches
-    for i, (imgs, caps, caplens, _) in enumerate(train_loader):
+    for i, (imgs, caps, caplens, _, _) in enumerate(train_loader):
         data_time.update(time.time() - start)
 
         # Move to GPU, if available
