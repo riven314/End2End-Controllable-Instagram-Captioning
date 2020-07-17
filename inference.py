@@ -16,6 +16,7 @@ from datasets import CaptionDataset
 from utils import *
 
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 data_folder = 'data/meta_wstyle/data_mid'
 data_name = 'flickr8k_1_cap_per_img_5_min_word_freq'
 checkpoint_file = './ckpts/v2/BEST_checkpoint_flickr8k_1_cap_per_img_5_min_word_freq.pth'
@@ -30,7 +31,7 @@ emb_dim = 512
 decoder_dim = 512
 vocab_size = len(word_map) 
 dropout = 0.5
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 
 encoder = Encoder()
 decoder = DecoderWithAttention(attention_dim = attention_dim,
