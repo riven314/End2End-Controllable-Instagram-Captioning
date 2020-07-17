@@ -32,10 +32,13 @@ def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_i
         data = json.load(j)
 
     # Read image paths and captions for each image
+    train_id = []
     train_image_paths = []
     train_image_captions = []
+    val_id = []
     val_image_paths = []
     val_image_captions = []
+    test_id = []
     test_image_paths = []
     test_image_captions = []
     word_freq = Counter()
@@ -50,17 +53,22 @@ def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_i
 
         if len(captions) == 0:
             continue
-
-        path = os.path.join(image_folder, img['filepath'], img['filename']) if dataset == 'coco' else os.path.join(
-            image_folder, img['filename'])
+        
+        if dataset == 'coco':
+            path = os.path.join(image_folder, img['filepath'], img['filename'])
+        else:
+            path = os.path.join(image_folder, img['filename'])
 
         if img['split'] in {'train', 'restval'}:
+            train_id.append(img['filename'])
             train_image_paths.append(path)
             train_image_captions.append(captions)
         elif img['split'] in {'val'}:
+            val_id.append(img['filename'])
             val_image_paths.append(path)
             val_image_captions.append(captions)
         elif img['split'] in {'test'}:
+            test_id.append(img['filename'])
             test_image_paths.append(path)
             test_image_captions.append(captions)
 
@@ -83,6 +91,17 @@ def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_i
     # Save word map to a JSON
     with open(os.path.join(output_folder, 'WORDMAP_' + base_filename + '.json'), 'w') as j:
         json.dump(word_map, j)
+
+    # Save image id
+    with open(os.path.join(output_folder, 'TRAIN_ID_' + base_filename + '.json'), 'w') as j:
+        json.dump(train_id, j) 
+    with open(os.path.join(output_folder, 'VAL_ID_' + base_filename + '.json'), 'w') as j:
+        json.dump(val_id, j) 
+    with open(os.path.join(output_folder, 'TEST_ID_' + base_filename + '.json'), 'w') as j:
+        json.dump(test_id, j) 
+    
+    from pdb import set_trace
+    set_trace()
 
     # Sample captions for each image, save images to HDF5 file, and captions and their lengths to JSON files
     seed(123)

@@ -171,7 +171,7 @@ def train(train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_
     start = time.time()
 
     # Batches
-    for i, (imgs, caps, caplens) in enumerate(train_loader):
+    for i, (imgs, caps, caplens, _) in enumerate(train_loader):
         data_time.update(time.time() - start)
 
         # Move to GPU, if available
@@ -263,7 +263,7 @@ def validate(val_loader, encoder, decoder, criterion):
     # solves the issue #57
     with torch.no_grad():
         # Batches
-        for i, (imgs, caps, caplens, allcaps) in enumerate(val_loader):
+        for i, (imgs, caps, caplens, allcaps, _) in enumerate(val_loader):
 
             # Move to device, if available
             imgs = imgs.to(device)
