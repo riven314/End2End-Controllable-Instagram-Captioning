@@ -48,7 +48,6 @@ encoder.eval()
 decoder.eval()
 
 
-
 def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n = -1):
     assert data_type in ['TRAIN', 'VAL', 'TEST']
     assert length_class in [0, 1, 2]
@@ -60,7 +59,7 @@ def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n =
     tfms = transforms.Compose([normalizer])
     dataset = CaptionDataset(data_folder, data_name, data_type, transform = tfms)
     dataloader = DataLoader(dataset, batch_size = 1, 
-                            shuffle = True, num_workers = 1, 
+                            shuffle = False, num_workers = 1, 
                             pin_memory = True)
 
     results = []

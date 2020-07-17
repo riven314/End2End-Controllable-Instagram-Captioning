@@ -12,8 +12,9 @@ cfg = Config()
 
 encoder, decoder = get_encoder_decoder(cfg)
 train_loader, val_loader, test_loader = get_dataloaders(cfg)
-learner = Learner(encoder, decoder, train_loader, val_loader, test_loader, cfg)
 
 
 if __name__ == '__main__':
+    test_loader = None
+    learner = Learner(encoder, decoder, train_loader, val_loader, test_loader, cfg)
     learner.main_run()
