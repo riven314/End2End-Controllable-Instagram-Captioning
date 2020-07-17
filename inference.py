@@ -84,7 +84,7 @@ def run_test_per_beamsize_style(beam_size, data_type = 'TEST', n = -1):
 
 if __name__ == '__main__':
     beam_size = 10
-    data_type = 'TEST'
+    data_type = 'TRAIN'
     result_csv = f'./ckpts/benchmarks_{data_type.lower()}.csv'
     
     agg_results = []
