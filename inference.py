@@ -76,14 +76,15 @@ def run_test_per_beamsize_style(beam_size, data_type = 'TEST', n = -1):
         img_caption = [w for w in img_cap if w not in {word_map['<start>'], word_map['<end>'], word_map['<pad>']}]
         img_caption = ' '.join([rev_word_map[s] for s in img_caption])
 
-        result = {'img_id': img_ids[0], 'data_type': data_type, 'gt_caption': img_caption}
+        result = {'img_id': img_ids[0], 'data_type': data_type, 
+                  'gt_caption': img_caption, 'predict_caption': predict}
         results.append(result)
     return results
 
 
 if __name__ == '__main__':
     beam_size = 10
-    data_type = 'TRAIN'
+    data_type = 'TEST'
     result_csv = f'./ckpts/benchmarks_{data_type.lower()}.csv'
     
     agg_results = []
