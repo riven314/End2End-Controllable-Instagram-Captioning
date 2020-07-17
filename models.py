@@ -264,7 +264,7 @@ class DecoderWithAttention(nn.Module):
         assert encoder_out.size(0) == 1
         device = encoder_out.device
 
-        enc_image_size = encoder_out.size(1)
+        #enc_image_size = encoder_out.size(1)
         encoder_dim = encoder_out.size(3)
 
         encoder_out = encoder_out.view(1, -1, encoder_dim) # (1, num_pixels, encoder_dim)
