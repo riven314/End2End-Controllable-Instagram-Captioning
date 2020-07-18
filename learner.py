@@ -21,6 +21,7 @@ class Learner:
 
         self.data_name = cfg.data_name
         self.save_dir = cfg.save_dir
+        os.makedirs(cfg.save_dir, exist_ok = True)
         
         self.encoder = encoder
         self.decoder = decoder

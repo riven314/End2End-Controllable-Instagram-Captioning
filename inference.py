@@ -18,7 +18,7 @@ from utils import *
 
 data_folder = 'data/meta_wstyle/data_mid'
 data_name = 'flickr8k_1_cap_per_img_5_min_word_freq'
-checkpoint_file = './ckpts/v1/BEST_checkpoint_flickr8k_1_cap_per_img_5_min_word_freq.pth'
+checkpoint_file = './ckpts/v2/BEST_checkpoint_flickr8k_1_cap_per_img_5_min_word_freq.pth'
 word_map_file = f'{data_folder}/WORDMAP_{data_name}.json'
 
 with open(word_map_file, 'r') as j:
@@ -48,7 +48,6 @@ encoder.eval()
 decoder.eval()
 
 
-
 def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n = -1):
     assert data_type in ['TRAIN', 'VAL', 'TEST']
     assert length_class in [0, 1, 2]
@@ -60,7 +59,7 @@ def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n =
     tfms = transforms.Compose([normalizer])
     dataset = CaptionDataset(data_folder, data_name, data_type, transform = tfms)
     dataloader = DataLoader(dataset, batch_size = 1, 
-                            shuffle = True, num_workers = 1, 
+                            shuffle = False, num_workers = 1, 
                             pin_memory = True)
 
     results = []
@@ -188,8 +187,8 @@ def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n =
 
 if __name__ == '__main__':
     beam_size = 10
-    data_type = 'VAL'
-    result_csv = f'./ckpts/v1/benchmarks_{data_type.lower()}.csv'
+    data_type = 'TEST'
+    result_csv = f'./ckpts/v2/benchmarks_{data_type.lower()}.csv'
     
     agg_results = []
     for len_class in [0, 1, 2]:
