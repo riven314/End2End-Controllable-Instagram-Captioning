@@ -1,7 +1,7 @@
 import torch
 
 class Config:
-    save_dir = './ckpts/v2'
+    save_dir = './ckpts/v3'
     data_folder = 'data/meta_wstyle/data_mid'
     data_name = 'flickr8k_1_cap_per_img_5_min_word_freq'
     checkpoint_file = './ckpts/v1/BEST_checkpoint_flickr8k_1_cap_per_img_5_min_word_freq.pth'
@@ -13,7 +13,7 @@ class Config:
     dropout = 0.5
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    epochs = 120
+    epochs = 3
     workers = 1
     batch_size = 64
 
