@@ -1,3 +1,6 @@
+import os
+import json
+
 import torch
 
 class Config:
@@ -12,7 +15,7 @@ class Config:
     decoder_dim = 512
     dropout = 0.5
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = 'cuda' # 'cpu'
     epochs = 30
     workers = 1
     batch_size = 64
@@ -32,6 +35,17 @@ class Config:
     adjust_step = 0.6
     decay_epoch = 2
     decay_step = 0.8
+
+    def save_config(self, save_path):
+        # exclude private properties and generic methods
+        attrs = [name for name, val in Config.__dict__.items() if not name.endswith('_') and not callable(val)]
+        attrs_dict = dict()
+        for attr in attrs:
+            val = getattr(self, attr, None)
+            attrs_dict[attr] = val
+        
+        with open(save_path, 'w') as f:
+            json.dump(attrs_dict, f, indent = 2)
 
     
     

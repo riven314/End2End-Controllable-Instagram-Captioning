@@ -43,7 +43,7 @@ class Learner:
         if cfg.checkpoint is not None:
             self._load_checkpoint(cfg.checkpoint)
 
-        self.device = cfg.device
+        self.device = torch.device(cfg.device)
         self.encoder.to(self.device)
         self.decoder.to(self.device)
         self.criterion = nn.CrossEntropyLoss().to(self.device)
