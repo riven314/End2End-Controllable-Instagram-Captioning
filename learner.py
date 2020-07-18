@@ -9,6 +9,7 @@ from nltk.translate.bleu_score import corpus_bleu
 import torch
 from torch import nn
 from torch.optim import Adam
+from ranger import Ranger
 from torch.nn.utils.rnn import pack_padded_sequence
 
 from utils import AverageMeter
@@ -23,6 +24,7 @@ class Learner:
         self.save_dir = cfg.save_dir
         os.makedirs(cfg.save_dir, exist_ok = True)
         
+        self.optimizer = cfg.optimizer
         self.encoder = encoder
         self.decoder = decoder
         self.fine_tune_encoder = cfg.fine_tune_encoder
@@ -50,11 +52,19 @@ class Learner:
         self.tolerance_epoch = cfg.tolerance_epoch
         self.adjust_epoch = cfg.adjust_epoch
         self.adjust_step = cfg.adjust_step
+        self.decay_epoch = cfg.decay_epoch
+        self.decay_step = cfg.decay_step
+
         self.print_freq = cfg.print_freq
 
     def main_run(self):
         for epoch in range(self.start_epoch, self.epochs):
             self.current_epoch = epoch
+
+            if (epoch != 0) and (epoch % self.decay_epoch == 0):
+                adjust_learning_rate(self.decoder_optimizer, self.decay_step)
+                if self.fine_tune_encoder:
+                    adjust_learning_rate(self.encoder_optimizer, self.decay_step)
 
             if self.epochs_since_improvement == self.tolerance_epoch:
                 break
@@ -250,12 +260,17 @@ class Learner:
         pass
 
     def _init_optimizer(self, encoder_lr, decoder_lr):
-        self.decoder_optimizer = Adam(params = filter(lambda p: p.requires_grad, self.decoder.parameters()),
-                                      lr = decoder_lr)
+        assert self.optimizer in ['adam', 'ranger']
+
+        optimizer = Adam if self.optimizer == 'adam' else Ranger
+        print(f'optimizer used: {optimizer}')
+
+        self.decoder_optimizer = optimizer(params = filter(lambda p: p.requires_grad, self.decoder.parameters()),
+                                           lr = decoder_lr)
 
         if self.fine_tune_encoder:
-            self.encoder_optimizer = Adam(params = filter(lambda p: p.requires_grad, self.encoder.parameters()), 
-                                          lr = encoder_lr)
+            self.encoder_optimizer = optimizer(params = filter(lambda p: p.requires_grad, self.encoder.parameters()),
+                                               lr = encoder_lr)
         else:
             self.encoder_optimizer = None
 
