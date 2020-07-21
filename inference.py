@@ -18,18 +18,23 @@ from utils import *
 
 data_folder = 'data/meta_wstyle/data_mid'
 data_name = 'flickr8k_1_cap_per_img_5_min_word_freq'
-checkpoint_file = './ckpts/v2/BEST_checkpoint_flickr8k_1_cap_per_img_5_min_word_freq.pth'
+checkpoint_dir = './ckpts/v4'
+checkpoint_file = os.path.join(checkpoint_dir, 'BEST_checkpoint_flickr8k_1_cap_per_img_5_min_word_freq.pth')
 word_map_file = f'{data_folder}/WORDMAP_{data_name}.json'
 
 with open(word_map_file, 'r') as j:
     word_map = json.load(j)
 rev_word_map = {v: k for k, v in word_map.items()}
 
-attention_dim = 512
-emb_dim = 512
-decoder_dim = 512
+cfg_path = os.path.join(checkpoint_dir, 'config.json')
+with open(cfg_path, 'r') as f:
+    cfg = json.load(f)
+
+attention_dim = cfg['attention_dim']
+emb_dim = cfg['emb_dim']
+decoder_dim = cfg['decoder_dim']
 vocab_size = len(word_map) 
-dropout = 0.5
+dropout = cfg['dropout']
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 encoder = Encoder()
@@ -187,21 +192,21 @@ def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n =
 
 if __name__ == '__main__':
     beam_size = 10
-    data_type = 'TEST'
-    result_csv = f'./ckpts/v2/benchmarks_{data_type.lower()}.csv'
-    
-    agg_results = []
-    for len_class in [0, 1, 2]:
-        print(f'beam size: {beam_size}, length class: {len_class}')
-        results = run_test_per_beamsize_style(beam_size, len_class, 
-                                              data_type = data_type, n = 200)
+    for data_type in ['TRAIN', 'VAL', 'TEST']:
+        result_csv = os.path.join(checkpoint_dir, f'benchmarks_{data_type.lower()}.csv')
+        
+        agg_results = []
+        for len_class in [0, 1, 2]:
+            print(f'data_type: {data_type}, beam size: {beam_size}, length class: {len_class}')
+            results = run_test_per_beamsize_style(beam_size, len_class, 
+                                                data_type = data_type, n = 200)
 
-        if agg_results == []:
-            agg_results = results
-        else:
-            for i in range(len(agg_results)):
-                agg_results[i].update(results[i])
+            if agg_results == []:
+                agg_results = results
+            else:
+                for i in range(len(agg_results)):
+                    agg_results[i].update(results[i])
 
-    result_df = pd.DataFrame(agg_results)
-    result_df.to_csv(result_csv, index = False)
-    print(f'result csv written: {result_csv}')
+        result_df = pd.DataFrame(agg_results)
+        result_df.to_csv(result_csv, index = False)
+        print(f'result csv written: {result_csv}')

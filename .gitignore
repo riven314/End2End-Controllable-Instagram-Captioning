@@ -9,6 +9,7 @@ data/*/*.hdf5
 data/meta_wostyle
 data/meta_wstyle
 
+*/.ipynb_checkpoints
 ckpts
 
 .vscode
