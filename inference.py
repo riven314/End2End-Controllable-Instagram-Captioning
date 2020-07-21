@@ -18,7 +18,7 @@ from utils import *
 
 data_folder = 'data/meta_wstyle/data_mid'
 data_name = 'flickr8k_1_cap_per_img_5_min_word_freq'
-checkpoint_dir = './ckpts/v3'
+checkpoint_dir = './ckpts/v4'
 checkpoint_file = os.path.join(checkpoint_dir, 'BEST_checkpoint_flickr8k_1_cap_per_img_5_min_word_freq.pth')
 word_map_file = f'{data_folder}/WORDMAP_{data_name}.json'
 
@@ -26,11 +26,15 @@ with open(word_map_file, 'r') as j:
     word_map = json.load(j)
 rev_word_map = {v: k for k, v in word_map.items()}
 
-attention_dim = 512
-emb_dim = 512
-decoder_dim = 512
+cfg_path = os.path.join(checkpoint_dir, 'config.json')
+with open(cfg_path, 'r') as f:
+    cfg = json.load(f)
+
+attention_dim = cfg['attention_dim']
+emb_dim = cfg['emb_dim']
+decoder_dim = cfg['decoder_dim']
 vocab_size = len(word_map) 
-dropout = 0.5
+dropout = cfg['dropout']
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 encoder = Encoder()

@@ -116,7 +116,7 @@ class DecoderWithAttention(nn.Module):
     """
 
     def __init__(self, attention_dim, embed_dim, decoder_dim, vocab_size, 
-                 encoder_dim = 2048, length_class_dim = 20, dropout = 0.5):
+                 encoder_dim = 2048, length_class_dim = 128, dropout = 0.5):
         """
         :param attention_dim: size of attention network
         :param embed_dim: embedding size

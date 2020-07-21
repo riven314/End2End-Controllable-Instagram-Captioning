@@ -8,6 +8,13 @@ def read_txt(path):
     return obj
 
 
+def read_json(json_path):
+    assert os.path.isfile(json_path)
+    with open(json_path, 'r') as f:
+        data = json.load(f)
+    return data
+
+
 def write_json(obj, json_path):
     with open(json_path, 'w') as f:
         json.dump(obj, f, indent = 2)

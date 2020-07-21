@@ -18,6 +18,8 @@ from utils import adjust_learning_rate, accuracy, save_checkpoint, clip_gradient
 
 class Learner:
     def __init__(self, encoder, decoder, train_loader, val_loader, test_loader, cfg):
+        assert cfg.device in ['cpu', 'cuda']
+
         self._load_word_maps(cfg.word_map_file)
 
         self.data_name = cfg.data_name

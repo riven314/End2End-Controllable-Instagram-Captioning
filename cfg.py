@@ -11,8 +11,8 @@ class Config:
     word_map_file = f'{data_folder}/WORDMAP_{data_name}.json'
     
     attention_dim = 512
-    emb_dim = 512
-    decoder_dim = 512
+    emb_dim = 1024
+    decoder_dim = 1024
     dropout = 0.5
 
     device = 'cuda' # 'cpu'
