@@ -1,8 +1,12 @@
+import os
+
 from utils import create_input_files
 
 IMG_DIR = '/userhome/34/h3509807/MadeWithML/data/Instagram/images'
-JSON_PATH = './data/ig_json/full.json'
-OUT_DIR = './data/meta_wostyle/data_full'
+JSON_PATH = './data/ig_json/full_clean.json'
+OUT_DIR = './data/meta_wostyle/data_full_clean'
+
+os.makedirs(OUT_DIR, exist_ok = True)
 
 if __name__ == '__main__':
     # Create input files (along with word map)
