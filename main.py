@@ -17,6 +17,7 @@ train_loader, val_loader, test_loader = get_dataloaders(cfg)
 if __name__ == '__main__':
     test_loader = None
     
+    os.makedirs(cfg.save_dir, exist_ok = True)
     save_cfg_path = os.path.join(cfg.save_dir, 'config.json')
     cfg.save_config(save_cfg_path)
 
