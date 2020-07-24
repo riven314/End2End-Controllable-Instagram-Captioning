@@ -4,10 +4,11 @@ import json
 import torch
 
 class Config:
-    save_dir = './ckpts/v4'
-    data_folder = 'data/meta_wstyle/data_mid'
+    save_dir = './ckpts/v7'
+    data_folder = 'data/meta_wstyle/data_mid_clean'
     data_name = 'flickr8k_1_cap_per_img_5_min_word_freq'
-    checkpoint_file = './ckpts/v1/BEST_checkpoint_flickr8k_1_cap_per_img_5_min_word_freq.pth'
+    #checkpoint_file = './ckpts/v5/BEST_checkpoint_flickr8k_1_cap_per_img_5_min_word_freq.pth'
+    checkpoint_file = None
     word_map_file = f'{data_folder}/WORDMAP_{data_name}.json'
     
     attention_dim = 512
@@ -16,7 +17,7 @@ class Config:
     dropout = 0.5
 
     device = 'cuda' # 'cpu'
-    epochs = 30
+    epochs = 50
     workers = 1
     batch_size = 64
 

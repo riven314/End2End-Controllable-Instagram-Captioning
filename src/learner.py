@@ -12,8 +12,8 @@ from torch.optim import Adam
 from ranger import Ranger
 from torch.nn.utils.rnn import pack_padded_sequence
 
-from utils import AverageMeter
-from utils import adjust_learning_rate, accuracy, save_checkpoint, clip_gradient
+from src.utils import AverageMeter
+from src.utils import adjust_learning_rate, accuracy, save_checkpoint, clip_gradient
 
 
 class Learner:
@@ -42,8 +42,8 @@ class Learner:
         self.epochs_since_improvement = 0
 
         self._init_optimizer(cfg.encoder_lr, cfg.decoder_lr)
-        if cfg.checkpoint is not None:
-            self._load_checkpoint(cfg.checkpoint)
+        if cfg.checkpoint_file is not None:
+            self._load_checkpoint(cfg.checkpoint_file)
 
         self.device = torch.device(cfg.device)
         self.encoder.to(self.device)
@@ -289,10 +289,19 @@ class Learner:
         self.start_epoch = checkpoint_dict['epoch'] + 1
         self.epochs_since_improvement = checkpoint_dict['epochs_since_improvement']
 
-        self.encoder_optimizer.load_state_dict(checkpoint_dict['encoder_optimizer'])
+        self.decoder.load_state_dict(checkpoint_dict['decoder'])
         self.decoder_optimizer.load_state_dict(checkpoint_dict['decoder_optimizer'])
-        encoder_lr = self.encoder_optimizer.param_groups[0]['lr']
         decoder_lr = self.decoder_optimizer.param_groups[0]['lr']
+
+        if (checkpoint_dict['encoder_optimizer'] is not None) and self.fine_tune_encoder:
+            self.encoder.load_state_dict(checkpoint_dict['encoder'])
+            self.encoder_optimizer.load_state_dict(checkpoint_dict['encoder_optimizer'])
+            encoder_lr = self.encoder_optimizer.param_groups[0]['lr']
+        elif (checkpoint_dict['encoder_optimizer'] is None) and self.fine_tune_encoder:
+            encoder_lr = self.encoder_optimizer.param_groups[0]['lr']
+        else:
+            encoder_lr = None
+
         self._init_optimizer(encoder_lr, decoder_lr)
 
         print('picked up learning rate from checkpoint \n')

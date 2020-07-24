@@ -2,10 +2,10 @@ import os
 
 import torch.backends.cudnn as cudnn
 
-from cfg import Config
-from models import get_encoder_decoder
-from datasets import get_dataloaders
-from learner import Learner
+from config.cfg import Config
+from src.models import get_encoder_decoder
+from src.datasets import get_dataloaders
+from src.learner import Learner
 
 cudnn.benchmark = True
 
@@ -17,6 +17,7 @@ train_loader, val_loader, test_loader = get_dataloaders(cfg)
 if __name__ == '__main__':
     test_loader = None
     
+    os.makedirs(cfg.save_dir, exist_ok = True)
     save_cfg_path = os.path.join(cfg.save_dir, 'config.json')
     cfg.save_config(save_cfg_path)
 
