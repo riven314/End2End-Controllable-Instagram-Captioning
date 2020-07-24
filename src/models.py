@@ -19,10 +19,10 @@ def get_encoder_decoder(cfg):
                                    vocab_size = len(word_map),
                                    dropout = cfg.dropout)
 
-    if cfg.checkpoint is not None:
-        assert os.path.isfile(cfg.checkpoint)
-        print(f'load in checkpoint: {cfg.checkpoint}')
-        checkpoint = torch.load(cfg.checkpoint)
+    if cfg.checkpoint_file is not None:
+        assert os.path.isfile(cfg.checkpoint_file)
+        print(f'load in checkpoint: {cfg.checkpoint_file}')
+        checkpoint = torch.load(cfg.checkpoint_file)
         encoder.load_state_dict(checkpoint['encoder'])
         decoder.load_state_dict(checkpoint['decoder'])
     return encoder, decoder

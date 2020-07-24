@@ -9,12 +9,13 @@ from nltk.translate.bleu_score import corpus_bleu
 import torch
 from torch import nn
 from torch.optim import Adam
-from ranger import Ranger
+from torch.distributions import Categorical
 from torch.nn.utils.rnn import pack_padded_sequence
 
 from src.utils import AverageMeter
 from src.utils import adjust_learning_rate, accuracy, save_checkpoint, clip_gradient
 
+from ranger import Ranger
 
 class Learner:
     def __init__(self, encoder, decoder, train_loader, val_loader, test_loader, cfg):
@@ -32,6 +33,7 @@ class Learner:
         self.fine_tune_encoder = cfg.fine_tune_encoder
         self.grad_clip = cfg.grad_clip
         self.alpha_c = cfg.alpha_c
+        self.confidence_c = cfg.confidence_c
 
         self.train_loader = train_loader
         self.val_loader = val_loader
@@ -98,8 +100,9 @@ class Learner:
         data_time = AverageMeter()  # data loading time
         losses = AverageMeter()  # loss (per word decoded)
         top5accs = AverageMeter()  # top5 accuracy
-
+        
         start = time.time()
+        log_softmax = nn.LogSoftmax()
 
         # Batches
         for i, (imgs, caps, caplens, _, len_class, img_ids) in enumerate(self.train_loader):
@@ -125,6 +128,12 @@ class Learner:
 
             # Calculate loss
             loss = self.criterion(scores.data, targets.data)
+
+            # Add confidence penalty
+            if self.confidence_c is not None:            
+                probs = log_softmax(scores.data).exp()
+                entropies = Categorical(probs = probs).entropy()
+                loss -= self.confidence_c * entropies.mean()
 
             # Add doubly stochastic attention regularization
             loss += self.alpha_c * ((1. - alphas.sum(dim=1)) ** 2).mean()
