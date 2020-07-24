@@ -17,7 +17,7 @@ class Config:
     dropout = 0.5
 
     device = 'cuda' # 'cpu'
-    epochs = 50
+    epochs = 25
     workers = 1
     batch_size = 64
 
@@ -27,10 +27,10 @@ class Config:
     decoder_lr = 4e-3 # 4e-4
     grad_clip = 5.
     alpha_c = 1.
+    confidence_c = 2. # None
 
     best_bleu4 = 0.
     print_freq = 50
-    checkpoint = None
     tolerance_epoch = 8
     adjust_epoch = 2
     adjust_step = 0.6
