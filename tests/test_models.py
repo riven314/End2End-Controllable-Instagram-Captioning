@@ -1,7 +1,7 @@
 import os
 
-from cfg import Config
-from models import get_encoder_decoder
+from config.cfg import Config
+from src.models import get_encoder_decoder
 
 cfg = Config()
 cfg.checkpoint = None

@@ -1,7 +1,7 @@
 import os
 import json
 
-from cfg import Config
+from config.cfg import Config
 
 
 save_path = './tests/test.json'
