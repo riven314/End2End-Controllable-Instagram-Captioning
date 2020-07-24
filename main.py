@@ -2,10 +2,10 @@ import os
 
 import torch.backends.cudnn as cudnn
 
-from cfg import Config
-from models import get_encoder_decoder
-from datasets import get_dataloaders
-from learner import Learner
+from config.cfg import Config
+from src.models import get_encoder_decoder
+from src.datasets import get_dataloaders
+from src.learner import Learner
 
 cudnn.benchmark = True
 

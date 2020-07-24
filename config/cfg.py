@@ -4,11 +4,11 @@ import json
 import torch
 
 class Config:
-    save_dir = './ckpts/v6'
+    save_dir = './ckpts/v7'
     data_folder = 'data/meta_wstyle/data_mid_clean'
     data_name = 'flickr8k_1_cap_per_img_5_min_word_freq'
-    checkpoint_file = './ckpts/v5/BEST_checkpoint_flickr8k_1_cap_per_img_5_min_word_freq.pth'
-    #checkpoint_file = None
+    #checkpoint_file = './ckpts/v5/BEST_checkpoint_flickr8k_1_cap_per_img_5_min_word_freq.pth'
+    checkpoint_file = None
     word_map_file = f'{data_folder}/WORDMAP_{data_name}.json'
     
     attention_dim = 512
@@ -22,7 +22,7 @@ class Config:
     batch_size = 64
 
     optimizer = 'ranger'
-    fine_tune_encoder = True
+    fine_tune_encoder = False
     encoder_lr = 1e-4
     decoder_lr = 4e-3 # 4e-4
     grad_clip = 5.

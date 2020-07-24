@@ -12,8 +12,8 @@ from torch.optim import Adam
 from ranger import Ranger
 from torch.nn.utils.rnn import pack_padded_sequence
 
-from utils import AverageMeter
-from utils import adjust_learning_rate, accuracy, save_checkpoint, clip_gradient
+from src.utils import AverageMeter
+from src.utils import adjust_learning_rate, accuracy, save_checkpoint, clip_gradient
 
 
 class Learner:
@@ -289,10 +289,12 @@ class Learner:
         self.start_epoch = checkpoint_dict['epoch'] + 1
         self.epochs_since_improvement = checkpoint_dict['epochs_since_improvement']
 
+        self.decoder.load_state_dict(checkpoint_dict['decoder'])
         self.decoder_optimizer.load_state_dict(checkpoint_dict['decoder_optimizer'])
         decoder_lr = self.decoder_optimizer.param_groups[0]['lr']
 
         if (checkpoint_dict['encoder_optimizer'] is not None) and self.fine_tune_encoder:
+            self.encoder.load_state_dict(checkpoint_dict['encoder'])
             self.encoder_optimizer.load_state_dict(checkpoint_dict['encoder_optimizer'])
             encoder_lr = self.encoder_optimizer.param_groups[0]['lr']
         elif (checkpoint_dict['encoder_optimizer'] is None) and self.fine_tune_encoder:
