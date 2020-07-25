@@ -5,7 +5,7 @@ import torch
 
 class Config:
     save_dir = './ckpts/v7'
-    data_folder = 'data/meta_wstyle/data_mid_clean'
+    data_folder = 'data/meta_wstyle/data_mid_clean_wonumber'
     data_name = 'flickr8k_1_cap_per_img_5_min_word_freq'
     #checkpoint_file = './ckpts/v5/BEST_checkpoint_flickr8k_1_cap_per_img_5_min_word_freq.pth'
     checkpoint_file = None
@@ -38,6 +38,7 @@ class Config:
     decay_epoch = 2
     decay_step = 0.8
 
+    
     def save_config(self, save_path):
         # exclude private properties and generic methods
         attrs = [name for name, val in Config.__dict__.items() if not name.endswith('_') and not callable(val)]
