@@ -23,14 +23,14 @@ def build_embedding_weight(word_map, embed_dim = 200):
 
 
 if __name__ == '__main__':
-    word_map = './data/meta_wstyle/data_mid_clean/WORDMAP_flickr8k_1_cap_per_img_5_min_word_freq.json'
+    word_map = './data/meta_wstyle/data_mid_clean_wonumber/WORDMAP_flickr8k_1_cap_per_img_1_min_word_freq.json'
     npy_file = './pretrained/embedding.npy'
 
     word_map = read_json(word_map)
     weight = build_embedding_weight(word_map)
     with open(npy_file, 'wb') as f:
         np.save(f, weight)
-    print(f'pretrained word embedding written: {npy_file}')
+    print(f'pretrained word embedding written: {npy_file} ({weight.shape})')
 
     # rev_word_map = {v: k for k, v in word_map.items()}
     # test_word_map = dict()
