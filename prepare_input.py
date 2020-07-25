@@ -1,19 +1,28 @@
 import os
+import argparse
 
-from utils import create_input_files
+from src.utils import create_input_files
 
-IMG_DIR = '/media/alex/Data/personal/Project/MadeWithML_Incubator/data/instagram/images'
-JSON_PATH = 'data/ig_json/mid_clean.json'
-OUT_DIR = './data/meta_wstyle/data_mid_clean'
-
-os.makedirs(OUT_DIR, exist_ok = True)
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--img_dir', type = str, default = '/media/alex/Data/personal/Project/MadeWithML_Incubator/data/instagram/images')
+    parser.add_argument('--min_word_freq', type = int, default = 5)
+    parser.add_argument('--json_path', type = str, required = True)
+    parser.add_argument('--out_dir', type = str, required = True)
+    args = parser.parse_args()
+
+    print(f'img_dir: {args.img_dir}')
+    print(f'json_path: {args.json_path}')
+    print(f'out_dir: {args.out_dir}')
+    print(f'min_word_freq: {args.min_word_freq}')
+
     # Create input files (along with word map)
+    os.makedirs(args.out_dir, exist_ok = True)
     create_input_files(dataset = 'flickr8k',
-                       karpathy_json_path = JSON_PATH,
-                       image_folder = IMG_DIR,
+                       karpathy_json_path = args.json_path,
+                       image_folder = args.img_dir,
                        captions_per_image = 1,
-                       min_word_freq = 5,
-                       output_folder = OUT_DIR,
+                       min_word_freq = args.min_word_freq,
+                       output_folder = args.out_dir,
                        max_len = 50)

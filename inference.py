@@ -11,14 +11,14 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 
-from models import Encoder, DecoderWithAttention
-from datasets import CaptionDataset
-from utils import *
+from src.models import Encoder, DecoderWithAttention
+from src.datasets import CaptionDataset
+from src.utils import *
 
 
+checkpoint_dir = './ckpts/v7'
 data_folder = 'data/meta_wstyle/data_mid_clean'
 data_name = 'flickr8k_1_cap_per_img_5_min_word_freq'
-checkpoint_dir = './ckpts/v6'
 checkpoint_file = os.path.join(checkpoint_dir, 'checkpoint_flickr8k_1_cap_per_img_5_min_word_freq.pth')
 word_map_file = f'{data_folder}/WORDMAP_{data_name}.json'
 

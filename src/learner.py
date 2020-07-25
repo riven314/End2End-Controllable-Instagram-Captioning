@@ -43,6 +43,20 @@ class Learner:
         self.start_epoch = 0
         self.epochs_since_improvement = 0
 
+        self.epochs = cfg.epochs
+        self.tolerance_epoch = cfg.tolerance_epoch
+        self.adjust_epoch = cfg.adjust_epoch
+        self.adjust_step = cfg.adjust_step
+        self.decay_epoch = cfg.decay_epoch
+        self.decay_step = cfg.decay_step
+
+        self.print_freq = cfg.print_freq
+
+        # load pretrained word embedding weight (optional)
+        if cfg.word_embedding_weight is not None:
+            self._load_word_embedding(cfg.word_embedding_weight)
+
+        # set up optimizer
         self._init_optimizer(cfg.encoder_lr, cfg.decoder_lr)
         if cfg.checkpoint_file is not None:
             self._load_checkpoint(cfg.checkpoint_file)
@@ -52,14 +66,6 @@ class Learner:
         self.decoder.to(self.device)
         self.criterion = nn.CrossEntropyLoss().to(self.device)
 
-        self.epochs = cfg.epochs
-        self.tolerance_epoch = cfg.tolerance_epoch
-        self.adjust_epoch = cfg.adjust_epoch
-        self.adjust_step = cfg.adjust_step
-        self.decay_epoch = cfg.decay_epoch
-        self.decay_step = cfg.decay_step
-
-        self.print_freq = cfg.print_freq
 
     def main_run(self):
         for epoch in range(self.start_epoch, self.epochs):
@@ -219,6 +225,12 @@ class Learner:
                 # Calculate loss
                 loss = self.criterion(scores.data, targets.data)
 
+                # Add confidence penalty
+                if self.confidence_c is not None:            
+                    probs = log_softmax(scores.data).exp()
+                    entropies = Categorical(probs = probs).entropy()
+                    loss -= self.confidence_c * entropies.mean()
+
                 # Add doubly stochastic attention regularization
                 loss += self.alpha_c * ((1. - alphas.sum(dim=1)) ** 2).mean()
 
@@ -316,6 +328,12 @@ class Learner:
         print('picked up learning rate from checkpoint \n')
         print(f'encoder lr: {encoder_lr}')
         print(f'decoder lr: {decoder_lr}')
+
+    def _load_word_embedding(self, word_embedding_weight):
+        assert word_embedding_weight
+        weight = np.load(word_embedding_weight)
+        self.decoder.load_pretrained_embeddings(weight)
+        print(f'pretrained word embedding loaded: {word_embedding_weight}')
     
     def _load_word_maps(self, word_map_file):
         assert os.path.isfile(word_map_file)

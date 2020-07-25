@@ -9,6 +9,7 @@ class Config:
     data_name = 'flickr8k_1_cap_per_img_5_min_word_freq'
     #checkpoint_file = './ckpts/v5/BEST_checkpoint_flickr8k_1_cap_per_img_5_min_word_freq.pth'
     checkpoint_file = None
+    word_embedding_weight = None
     word_map_file = f'{data_folder}/WORDMAP_{data_name}.json'
     
     attention_dim = 512
