@@ -137,7 +137,6 @@ class DecoderWithAttention(nn.Module):
 
         self.attention = Attention(encoder_dim, decoder_dim, attention_dim)  # attention network
 
-        self.embedding = nn.Embedding(vocab_size, embed_dim)  # embedding layer
         self.dropout = nn.Dropout(p=self.dropout)
         self.decode_step = nn.LSTMCell(embed_dim + encoder_dim + length_class_dim, 
                                        decoder_dim, bias=True)  # decoding LSTMCell
@@ -145,17 +144,26 @@ class DecoderWithAttention(nn.Module):
         self.init_c = nn.Linear(encoder_dim, decoder_dim)  # linear layer to find initial cell state of LSTMCell
         self.f_beta = nn.Linear(decoder_dim, encoder_dim)  # linear layer to create a sigmoid-activated gate
         self.sigmoid = nn.Sigmoid()
+
+        # embedding layers
+        self.embedding = nn.Embedding(vocab_size, embed_dim)  # embedding layer
+        self.length_class_embedding = nn.Embedding(3, length_class_dim)
+
         self.fc = nn.Linear(decoder_dim, vocab_size)  # linear layer to find scores over vocabulary
         self.init_weights()  # initialize some layers with the uniform distribution
-
-        # add control on style codes
-        self.length_class_embedding = nn.Embedding(3, length_class_dim)
 
     def init_weights(self):
         """
         Initializes some parameters with values from the uniform distribution, for easier convergence.
         """
+        self._init_embedding()
+        self._init_fc()
+
+    def _init_embedding(self):
         self.embedding.weight.data.uniform_(-0.1, 0.1)
+        self.length_class_embedding.weight.data.uniform_(-0.1, 0.1)
+
+    def _init_fc(self):
         self.fc.bias.data.fill_(0)
         self.fc.weight.data.uniform_(-0.1, 0.1)
 
@@ -165,7 +173,9 @@ class DecoderWithAttention(nn.Module):
 
         :param embeddings: pre-trained embeddings
         """
+        weight = torch.from_numpy(embeddings).float()
         self.embedding.weight = nn.Parameter(embeddings)
+        self.embedding.weight.requires_grad = False
 
     def fine_tune_embeddings(self, fine_tune=True):
         """
@@ -183,7 +193,7 @@ class DecoderWithAttention(nn.Module):
         :param encoder_out: encoded images, a tensor of dimension (batch_size, num_pixels, encoder_dim)
         :return: hidden state, cell state
         """
-        mean_encoder_out = encoder_out.mean(dim=1)
+        mean_encoder_out = encoder_out.mean(dim = 1)
         h = self.init_h(mean_encoder_out)  # (batch_size, decoder_dim)
         c = self.init_c(mean_encoder_out)
         return h, c

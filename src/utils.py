@@ -31,13 +31,6 @@ def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_i
     """
     assert dataset in {'coco', 'flickr8k', 'flickr30k'}
     
-    global STYLE_META_FILE
-    style_df = pd.read_csv(STYLE_META_FILE)
-
-    style_map = dict()
-    for img_id, length_class in zip(style_df.id, style_df.length_class):
-        style_map[img_id] = length_class
-
     # Read Karpathy JSON
     with open(karpathy_json_path, 'r') as j:
         data = json.load(j)
@@ -75,7 +68,13 @@ def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_i
             path = os.path.join(image_folder, img['filename'])
 
         # extract styles
-        length_class = style_map[img['filename']]
+        sentence_length = len(img['sentences'][0]['tokens'])
+        if sentence_length <= 5:
+            length_class = 0
+        elif (sentence_length > 5) & (sentence_length <= 9):
+            length_class = 1
+        else:
+            length_class = 2
         style_dict = {'length_class': length_class}
 
         if img['split'] in {'train', 'restval'}:
