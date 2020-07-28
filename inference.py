@@ -16,10 +16,10 @@ from src.datasets import CaptionDataset
 from src.utils import *
 
 
-checkpoint_dir = './ckpts/v7'
-data_folder = 'data/meta_wstyle/data_mid_clean'
-data_name = 'flickr8k_1_cap_per_img_5_min_word_freq'
-checkpoint_file = os.path.join(checkpoint_dir, 'checkpoint_flickr8k_1_cap_per_img_5_min_word_freq.pth')
+checkpoint_dir = './ckpts/v10'
+data_folder = '/home/alex/Desktop/data_mid_clean_wonumber'
+data_name = 'flickr8k_1_cap_per_img_1_min_word_freq'
+checkpoint_file = os.path.join(checkpoint_dir, 'checkpoint_flickr8k_1_cap_per_img_1_min_word_freq.pth')
 word_map_file = f'{data_folder}/WORDMAP_{data_name}.json'
 
 with open(word_map_file, 'r') as j:

@@ -136,8 +136,9 @@ class Learner:
             loss = self.criterion(scores.data, targets.data)
 
             # Add confidence penalty
-            if self.confidence_c is not None:            
-                probs = log_softmax(scores.data).exp()
+            if self.confidence_c is not None:
+                tgt_batch_idx = scores.batch_sizes[:3].sum() # only consider predictions for first 3 words
+                probs = log_softmax(scores.data[:tgt_batch_idx]).exp()
                 entropies = Categorical(probs = probs).entropy()
                 loss -= self.confidence_c * entropies.mean()
 
@@ -191,6 +192,7 @@ class Learner:
         losses = AverageMeter()
         top5accs = AverageMeter()
 
+        log_softmax = nn.LogSoftmax()
         start = time.time()
 
         # references (true captions) for calculating BLEU-4 score
@@ -227,7 +229,8 @@ class Learner:
 
                 # Add confidence penalty
                 if self.confidence_c is not None:            
-                    probs = log_softmax(scores.data).exp()
+                    tgt_batch_idx = scores.batch_sizes[:3].sum() # only consider predictions for first 3 words
+                    probs = log_softmax(scores.data[:tgt_batch_idx]).exp()
                     entropies = Categorical(probs = probs).entropy()
                     loss -= self.confidence_c * entropies.mean()
 
