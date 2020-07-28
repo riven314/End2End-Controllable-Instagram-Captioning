@@ -16,7 +16,7 @@ from src.datasets import CaptionDataset
 from src.utils import *
 
 
-checkpoint_dir = './ckpts/v10'
+checkpoint_dir = './ckpts/v11'
 data_folder = '/home/alex/Desktop/data_mid_clean_wonumber'
 data_name = 'flickr8k_1_cap_per_img_1_min_word_freq'
 checkpoint_file = os.path.join(checkpoint_dir, 'checkpoint_flickr8k_1_cap_per_img_1_min_word_freq.pth')
