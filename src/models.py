@@ -174,7 +174,7 @@ class DecoderWithAttention(nn.Module):
         :param embeddings: pre-trained embeddings
         """
         weight = torch.from_numpy(embeddings).float()
-        self.embedding.weight = nn.Parameter(embeddings)
+        self.embedding.weight = nn.Parameter(weight)
         self.embedding.weight.requires_grad = False
 
     def fine_tune_embeddings(self, fine_tune=True):

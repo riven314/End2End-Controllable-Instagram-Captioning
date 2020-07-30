@@ -9,6 +9,10 @@ data/*/*.hdf5
 data/meta_wostyle
 data/meta_wstyle
 
+data/notebooks/.ipynb_checkpoints
+data/notebooks/*.model
+data/notebooks/*.json
+
 */.ipynb_checkpoints
 ckpts
 
