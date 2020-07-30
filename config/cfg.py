@@ -4,8 +4,8 @@ import json
 import torch
 
 class Config:
-    save_dir = './ckpts/v12_wstyle_wp'
-    data_folder = '/userhome/34/h3509807/MadeWithML/a-PyTorch-Tutorial-to-Image-Captioning/data/meta_wstyle/data_mid_clean_wonumber'
+    save_dir = './ckpts/v13_wstyle_wp_full_entropy'
+    data_folder = '/userhome/34/h3509807/MadeWithML/a-PyTorch-Tutorial-to-Image-Captioning/data/meta_wstyle/data_mid_clean_wonumber_wp'
     #data_folder = '/home/alex/Desktop/data_mid_clean_wonumber'
     #data_folder = './data/meta_wstyle/data_mid_clean_wonumber'
     data_name = 'flickr8k_1_cap_per_img_1_min_word_freq'
