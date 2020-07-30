@@ -3,7 +3,6 @@ import json
 from collections import Counter
 from random import seed, choice, sample
 
-#from scipy.misc import imread, imresize
 import cv2
 import h5py
 import torch
@@ -12,12 +11,14 @@ from tqdm import tqdm
 import pandas as pd
 import numpy as np
 
+from data.utils import write_json, read_json
+from src.input_utils import create_nonimage_input
+from src.word_map_utils import create_word_map_from_simple, create_word_map_from_pretrained_wordpiece
+#STYLE_META_FILE = '/media/alex/Data/personal/Project/MadeWithML_Incubator/data/instagram/partition/meta_data/v1/meta_all.csv'
 
-STYLE_META_FILE = '/media/alex/Data/personal/Project/MadeWithML_Incubator/data/instagram/partition/meta_data/v1/meta_all.csv'
 
-
-def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_image, 
-                       min_word_freq, output_folder, max_len = 100):
+def create_input_files(dataset, karpathy_json_path, image_folder, min_word_freq, 
+                       output_folder, max_len = 100, vocab_size = None):
     """
     Creates input files for training, validation, and test data.
 
@@ -30,106 +31,24 @@ def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_i
     :param max_len: don't sample captions longer than this length
     """
     assert dataset in {'coco', 'flickr8k', 'flickr30k'}
-    
-    # Read Karpathy JSON
-    with open(karpathy_json_path, 'r') as j:
-        data = json.load(j)
+    captions_per_image = 1
+    base_filename = f'{dataset}_{str(captions_per_image)}_cap_per_img_{str(min_word_freq)}_min_word_freq'
 
-    # Read image paths and captions for each image
-    train_id = []
-    train_image_paths = []
-    train_image_captions = []
-    train_styles = []
-    val_id = []
-    val_image_paths = []
-    val_image_captions = []
-    val_styles = []
-    test_id = []
-    test_image_paths = []
-    test_image_captions = []
-    test_styles = []
-    word_freq = Counter()
+    data = read_json(karpathy_json_path)
 
-    for img in tqdm(data['images']):
-        captions = []
-        for c in img['sentences']:
-            # Update word frequency
-            word_freq.update(c['tokens'])
-            if len(c['tokens']) <= max_len:
-                captions.append(c['tokens'])
+    # create and save word_freq
+    word_map, all_captions = create_word_map_from_pretrained_wordpiece(
+                                data, base_filename, output_folder, 
+                                min_word_freq, max_len, vocab_size
+                            )
 
-        if len(captions) == 0:
-            continue
+    # streamline data and write id, styles data
+    partition_dict = create_nonimage_input(data, word_map, all_captions, base_filename, image_folder, output_folder)
+    train_image_paths, train_image_captions = partition_dict['train']
+    val_image_paths, val_image_captions = partition_dict['val']
+    test_image_paths, test_image_captions = partition_dict['test']
 
-        # extract image path
-        if dataset == 'coco':
-            path = os.path.join(image_folder, img['filepath'], img['filename'])
-        else: 
-            path = os.path.join(image_folder, img['filename'])
-
-        # extract styles
-        sentence_length = len(img['sentences'][0]['tokens'])
-        if sentence_length <= 5:
-            length_class = 0
-        elif (sentence_length > 5) & (sentence_length <= 9):
-            length_class = 1
-        else:
-            length_class = 2
-        style_dict = {'length_class': length_class}
-
-        if img['split'] in {'train', 'restval'}:
-            train_id.append(img['filename'])
-            train_image_paths.append(path)
-            train_image_captions.append(captions)
-            train_styles.append(style_dict)
-        elif img['split'] in {'val'}:
-            val_id.append(img['filename'])
-            val_image_paths.append(path)
-            val_image_captions.append(captions)
-            val_styles.append(style_dict)
-        elif img['split'] in {'test'}:
-            test_id.append(img['filename'])
-            test_image_paths.append(path)
-            test_image_captions.append(captions)
-            test_styles.append(style_dict)
-
-    # Sanity check
-    assert len(train_image_paths) == len(train_image_captions) == len(train_styles)
-    assert len(val_image_paths) == len(val_image_captions) == len(val_styles)
-    assert len(test_image_paths) == len(test_image_captions) == len(test_styles)
-
-    # Create word map
-    words = [w for w in word_freq.keys() if word_freq[w] > min_word_freq]
-    word_map = {k: v + 1 for v, k in enumerate(words)}
-    word_map['<unk>'] = len(word_map) + 1
-    word_map['<start>'] = len(word_map) + 1
-    word_map['<end>'] = len(word_map) + 1
-    word_map['<pad>'] = 0
-
-    # Create a base/root name for all output files
-    base_filename = dataset + '_' + str(captions_per_image) + '_cap_per_img_' + str(min_word_freq) + '_min_word_freq'
-
-    # Save word map to a JSON
-    with open(os.path.join(output_folder, 'WORDMAP_' + base_filename + '.json'), 'w') as j:
-        json.dump(word_map, j)
-
-    # Save image id
-    with open(os.path.join(output_folder, 'TRAIN_ID_' + base_filename + '.json'), 'w') as j:
-        json.dump(train_id, j) 
-    with open(os.path.join(output_folder, 'VAL_ID_' + base_filename + '.json'), 'w') as j:
-        json.dump(val_id, j) 
-    with open(os.path.join(output_folder, 'TEST_ID_' + base_filename + '.json'), 'w') as j:
-        json.dump(test_id, j) 
-
-    # save styles data
-    with open(os.path.join(output_folder, 'TRAIN_STYLES_' + base_filename + '.json'), 'w') as j:
-        json.dump(train_styles, j) 
-    with open(os.path.join(output_folder, 'VAL_STYLES_' + base_filename + '.json'), 'w') as j:
-        json.dump(val_styles, j) 
-    with open(os.path.join(output_folder, 'TEST_STYLES_' + base_filename + '.json'), 'w') as j:
-        json.dump(test_styles, j) 
-
-    # Sample captions for each image, save images to HDF5 file, and captions and their lengths to JSON files
+    # sample captions for each image, save images to HDF5 file, and captions and their lengths to JSON files
     seed(123)
     for impaths, imcaps, split in [(train_image_paths, train_image_captions, 'TRAIN'),
                                    (val_image_paths, val_image_captions, 'VAL'),
@@ -190,12 +109,12 @@ def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_i
             # Sanity check
             assert images.shape[0] * captions_per_image == len(enc_captions) == len(caplens)
 
-            # Save encoded captions and their lengths to JSON files
-            with open(os.path.join(output_folder, split + '_CAPTIONS_' + base_filename + '.json'), 'w') as j:
-                json.dump(enc_captions, j)
+            captions_json = os.path.join(output_folder, split + '_CAPTIONS_' + base_filename + '.json')
+            write_json(enc_captions, captions_json)
 
-            with open(os.path.join(output_folder, split + '_CAPLENS_' + base_filename + '.json'), 'w') as j:
-                json.dump(caplens, j)
+            caplens_json = os.path.join(output_folder, split + '_CAPLENS_' + base_filename + '.json')
+            write_json(caplens, caplens_json)
+    return None
 
 
 def init_embedding(embeddings):
@@ -290,7 +209,6 @@ def save_checkpoint(data_name, epoch, epochs_since_improvement, encoder, decoder
         filename = f'BEST_{filename}'
         model_path = os.path.join(save_dir, filename)
         torch.save(state, model_path)
-
 
 class AverageMeter(object):
     """
