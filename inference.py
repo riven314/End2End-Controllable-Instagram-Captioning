@@ -180,20 +180,23 @@ def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n =
         i = complete_seqs_scores.index(max(complete_seqs_scores))
         seq = complete_seqs[i]
 
-        # references
+        # references & prediction
         img_cap = caps.tolist()[0]
         img_caption = [w for w in img_cap if w not in {word_map['<start>'], word_map['<end>'], word_map['<pad>']}]
+        predict = [w for w in seq if w not in {word_map['<start>'], word_map['<end>'], word_map['<pad>']}]
         
         if subword:
             assert tokenizer is not None
-            enc = tokenizer.convert_tokens_to_ids(img_caption)
-            img_caption = tokenizer.decode(enc)
+            img_caption = [rev_word_map[s] for s in img_caption]
+            ref_enc = tokenizer.convert_tokens_to_ids(img_caption)
+            img_caption = tokenizer.decode(ref_enc)
+
+            predict = [rev_word_map[s] for s in predict]
+            pred_enc = tokenizer.convert_tokens_to_ids(predict)
+            predict = tokenizer.decode(pred_enc)            
         else:
             img_caption = ' '.join([rev_word_map[s] for s in img_caption])
-
-        # hypotheses
-        predict = [w for w in seq if w not in {word_map['<start>'], word_map['<end>'], word_map['<pad>']}]
-        predict = ' '.join([rev_word_map[s] for s in predict])
+            predict = ' '.join([rev_word_map[s] for s in predict])
         
         result = {
             'img_id': img_ids[0], 'length_class': int(gt_len_class.cpu().squeeze()), 'data_type': data_type,
