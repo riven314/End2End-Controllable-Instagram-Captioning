@@ -1,28 +1,36 @@
 import time
+
 import torch.backends.cudnn as cudnn
 import torch.optim
 import torch.utils.data
 import torchvision.transforms as transforms
 from torch import nn
 from torch.nn.utils.rnn import pack_padded_sequence
+
+from nltk.translate.bleu_score import corpus_bleu
+
 from models import Encoder, DecoderWithAttention
 from datasets import *
 from utils import *
-from nltk.translate.bleu_score import corpus_bleu
+
+from torch.optim import Adam
+from ranger import Ranger
+
 
 # Data parameters
-data_folder = './data/meta_wostyle/data_full'  # folder with data files saved by create_input_files.py
+data_folder = './data/meta_wostyle/data_full_clean'  # folder with data files saved by create_input_files.py
 data_name = 'flickr8k_1_cap_per_img_5_min_word_freq'  # base name shared by data files
 
 # Model parameters
-emb_dim = 512  # dimension of word embeddings
+emb_dim = 1024 # dimension of word embeddings
 attention_dim = 512  # dimension of attention linear layers
-decoder_dim = 512  # dimension of decoder RNN
+decoder_dim = 1024  # dimension of decoder RNN
 dropout = 0.5
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # sets device for model and PyTorch tensors
 cudnn.benchmark = True  # set to true only if inputs to model are fixed size; otherwise lot of computational overhead
 
 # Training parameters
+optimizer = 'ranger'
 start_epoch = 0
 epochs = 120  # number of epochs to train for (if early stopping is not triggered)
 epochs_since_improvement = 0  # keeps track of number of epochs since there's been an improvement in validation BLEU
@@ -42,6 +50,11 @@ fine_tune_encoder = False  # fine-tune encoder?
 checkpoint = None
 tolerance_epoch = 10 # failure to improve with consecutive epochs would terminate the training
 adjust_epoch = 2 # adjust learning rate for consecutive epoch failure to improve
+decay_epoch = 2
+decay_step = 0.8
+
+assert optimizer in ['adam', 'ranger']
+
 
 def main():
     """
@@ -61,12 +74,17 @@ def main():
                                    decoder_dim=decoder_dim,
                	                   vocab_size=len(word_map),
                                    dropout=dropout)
-    decoder_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, decoder.parameters()),
-                                         lr=decoder_lr)
+
+    opt = Adam if optimizer == 'adam' else Ranger
+
+    decoder_optimizer = opt(params = filter(lambda p: p.requires_grad, decoder.parameters()), lr = decoder_lr)
     encoder = Encoder()
     encoder.fine_tune(fine_tune_encoder)
-    encoder_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, encoder.parameters()),
-                                         lr=encoder_lr) if fine_tune_encoder else None
+
+    if fine_tune_encoder:
+        encoder_optimizer = opt(params = filter(lambda p: p.requires_grad, encoder.parameters()), lr = encoder_lr)
+    else:
+        encoder_optimizer = None
 
     if checkpoint is not None:
         print(f'picking up checkpoint: {checkpoint}')
@@ -76,19 +94,16 @@ def main():
         best_bleu4 = checkpoint['bleu-4']
         decoder.load_state_dict(checkpoint['decoder'])
         decoder_optimizer.load_state_dict(checkpoint['decoder_optimizer'])
-        decoder_optimizer = torch.optim.Adam(
-                     params = filter(lambda p: p.requires_grad, decoder.parameters()),
-                     lr = decoder_optimizer.param_groups[0]['lr']
-                     )
+        decoder_optimizer = opt(params = filter(lambda p: p.requires_grad, decoder.parameters()),
+                                lr = decoder_optimizer.param_groups[0]['lr'])
         encoder.load_state_dict(checkpoint['encoder'])
+
         if encoder_optimizer is not None:
             encoder_optimizer.load_state_dict(checkpoint['encoder_optimizer'])
-            encoder_optimizer = torch.optim.Adam(params = filter(lambda p: p.requires_grad, encoder.parameters()),
-                                                 lr = encoder_optimizer.param_groups[0]['lr'])
+            encoder_optimizer = opt(params = filter(lambda p: p.requires_grad, encoder.parameters()), lr = encoder_optimizer.param_groups[0]['lr'])
         if fine_tune_encoder is True and encoder_optimizer is None:
             encoder.fine_tune(fine_tune_encoder)
-            encoder_optimizer = torch.optim.Adam(params=filter(lambda p: p.requires_grad, encoder.parameters()),
-                                                 lr=encoder_lr)
+            encoder_optimizer = opt(params = filter(lambda p: p.requires_grad, encoder.parameters()), lr=encoder_lr)
 
     # Move to GPU, if available
     decoder = decoder.to(device)
@@ -113,6 +128,12 @@ def main():
         # Decay learning rate if there is no improvement for 8 consecutive epochs, and terminate training after 20
         if epochs_since_improvement == tolerance_epoch:
             break
+
+        if (epoch != 0) and (epoch % decay_epoch == 0):
+            adjust_learning_rate(decoder_optimizer, decay_step)
+            if fine_tune_encoder:
+                adjust_learning_rate(encoder_optimizer, decay_step)
+
         if epochs_since_improvement > 0 and epochs_since_improvement % adjust_epoch == 0:
             adjust_learning_rate(decoder_optimizer, 0.8)
             if fine_tune_encoder:

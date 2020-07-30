@@ -17,7 +17,7 @@ from utils import *
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-data_folder = 'data/meta_wostyle/data_full'
+data_folder = 'data/meta_wostyle/data_full_clean'
 data_name = 'flickr8k_1_cap_per_img_5_min_word_freq'
 checkpoint_file = './ckpts/BEST_checkpoint_flickr8k_1_cap_per_img_5_min_word_freq.pth'
 word_map_file = f'{data_folder}/WORDMAP_{data_name}.json'
@@ -27,8 +27,8 @@ with open(word_map_file, 'r') as j:
 rev_word_map = {v: k for k, v in word_map.items()}
 
 attention_dim = 512
-emb_dim = 512
-decoder_dim = 512
+emb_dim = 1024
+decoder_dim = 1024
 vocab_size = len(word_map) 
 dropout = 0.5
 
@@ -85,18 +85,20 @@ def run_test_per_beamsize_style(beam_size, data_type = 'TEST', n = -1):
 if __name__ == '__main__':
     beam_size = 10
     data_type = 'TRAIN'
-    result_csv = f'./ckpts/benchmarks_{data_type.lower()}.csv'
+
+    for data_type in ['TRAIN', 'VAL', 'TEST']:
+        result_csv = f'./ckpts/benchmarks_{data_type.lower()}.csv'
     
-    agg_results = []
-    print(f'beam size: {beam_size}')
-    results = run_test_per_beamsize_style(beam_size, data_type = data_type, n = 200)
+        agg_results = []
+        print(f'beam size: {beam_size}')
+        results = run_test_per_beamsize_style(beam_size, data_type = data_type, n = 200)
 
-    if agg_results == []:
-        agg_results = results
-    else:
-        for i in range(len(agg_results)):
-            agg_results[i].update(results[i])
+        if agg_results == []:
+            agg_results = results
+        else:
+            for i in range(len(agg_results)):
+                agg_results[i].update(results[i])
 
-    result_df = pd.DataFrame(agg_results)
-    result_df.to_csv(result_csv, index = False)
-    print(f'result csv written: {result_csv}')
+        result_df = pd.DataFrame(agg_results)
+        result_df.to_csv(result_csv, index = False)
+        print(f'result csv written: {result_csv}')
