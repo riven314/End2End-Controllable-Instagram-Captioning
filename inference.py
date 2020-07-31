@@ -18,7 +18,7 @@ from src.datasets import CaptionDataset
 from src.utils import *
 
 
-checkpoint_dir = './ckpts/v12_wstyle_wp'
+checkpoint_dir = './ckpts/v14_wstyle_wp_full_entropy_3.0'
 data_folder = './data/meta_wstyle/data_mid_clean_wonumber_wp'
 data_name = 'flickr8k_1_cap_per_img_1_min_word_freq'
 checkpoint_file = os.path.join(checkpoint_dir, 'checkpoint_flickr8k_1_cap_per_img_1_min_word_freq.pth')
@@ -177,6 +177,27 @@ def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n =
                     break
                 step += 1
 
+        # skip if no sequence are complete within 50 steps
+        if len(complete_seqs_scores) == 0:
+            print(f'{img_ids[0]} has no complete sentence')
+            img_cap = caps.tolist()[0]
+            img_caption = [w for w in img_cap if w not in {word_map['<start>'], word_map['<end>'], word_map['<pad>']}]
+            img_caption = [rev_word_map[s] for s in img_caption]
+            
+            if subword:
+                assert tokenizer is not None
+                ref_enc = tokenizer.convert_tokens_to_ids(img_caption)
+                img_caption = tokenizer.decode(ref_enc)
+            else:
+                img_caption = ' '.join(img_caption)
+            
+            result = {
+                'img_id': img_ids[0], 'length_class': int(gt_len_class.cpu().squeeze()), 'data_type': data_type, 
+                'gt_caption': img_caption, f'length_class_{length_class}': 'NA'
+                }
+            results.append(result)
+            continue
+
         i = complete_seqs_scores.index(max(complete_seqs_scores))
         seq = complete_seqs[i]
 
@@ -208,7 +229,7 @@ def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n =
 
 if __name__ == '__main__':
     beam_size = 10
-    for data_type in ['TRAIN', 'VAL', 'TEST']:
+    for data_type in ['TEST', 'TRAIN', 'VAL']:
         result_csv = os.path.join(checkpoint_dir, f'benchmarks_{data_type.lower()}.csv')
         
         agg_results = []

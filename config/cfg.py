@@ -4,7 +4,7 @@ import json
 import torch
 
 class Config:
-    save_dir = './ckpts/v13_wstyle_wp_full_entropy'
+    save_dir = './ckpts/v14_wstyle_wp_full_entropy_3.0'
     data_folder = '/userhome/34/h3509807/MadeWithML/a-PyTorch-Tutorial-to-Image-Captioning/data/meta_wstyle/data_mid_clean_wonumber_wp'
     #data_folder = '/home/alex/Desktop/data_mid_clean_wonumber'
     #data_folder = './data/meta_wstyle/data_mid_clean_wonumber'
@@ -31,7 +31,7 @@ class Config:
     decoder_lr = 4e-3 # 4e-4
     grad_clip = 5.
     alpha_c = 1.
-    confidence_c = 2. # None
+    confidence_c = 3. # None
 
     best_bleu4 = 0.
     print_freq = 50
