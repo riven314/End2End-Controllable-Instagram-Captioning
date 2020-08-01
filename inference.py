@@ -11,11 +11,13 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 
+import emoji
 from transformers import AutoTokenizer
 
 from src.models import Encoder, DecoderWithAttention
 from src.datasets import CaptionDataset
 from src.utils import *
+from src.word_map_utils import get_wp_tokenizer
 
 
 checkpoint_dir = './ckpts/v14_wstyle_wp_full_entropy_3.0'
@@ -71,8 +73,7 @@ def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n =
     
     tokenizer = None
     if subword:
-        tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
-        tokenizer.add_tokens('@username')
+        tokenizer = get_wp_tokenizer()
 
     results = []
     for i, (image, caps, _, allcaps, gt_len_class, img_ids) in enumerate(tqdm(dataloader)):

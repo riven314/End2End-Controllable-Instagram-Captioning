@@ -1,6 +1,8 @@
 import os
 import json
 
+import emoji
+
 from data.utils import write_json
 
 
@@ -14,10 +16,10 @@ def create_nonimage_input(data, word_map, all_captions, base_filename, image_fol
     :param output_folder: dir for writing json input data (for training)
     :return partition_dict: dict[partition] : (image_paths, image_captions)
     """
+    print('building non-image input...')
+
     # read image paths and captions for each image
-    train_id, train_image_paths, train_image_captions, train_styles = [], [], [], []
-    val_id, val_image_paths, val_image_captions, val_styles = [], [], [], []
-    test_id, test_image_paths, test_image_captions, test_styles = [], [], [], []
+    train_tup, val_tup, test_tup = [], [], []
 
     for img, captions in zip(data['images'], all_captions):
         if len(captions) == 0:
@@ -34,29 +36,28 @@ def create_nonimage_input(data, word_map, all_captions, base_filename, image_fol
             length_class = 1
         else:
             length_class = 2
-        style_dict = {'length_class': length_class}
+
+        is_emoji = any([token.startswith(':') and token.endswith(':') for token in captions[0]]) * 1
+        style_dict = {'length_class': length_class, 'is_emoji': is_emoji}
 
         # streamline by data partition
-        if img['split'] == 'train':
-            train_id.append(img['filename'])
-            train_image_paths.append(path)
-            train_image_captions.append(captions)
-            train_styles.append(style_dict)
+        if img['split'] == 'train': # this is slow
+            train_tup.append((img['filename'], path, captions, style_dict))
+            pass
         elif img['split'] == 'val':
-            val_id.append(img['filename'])
-            val_image_paths.append(path)
-            val_image_captions.append(captions)
-            val_styles.append(style_dict)
+            val_tup.append((img['filename'], path, captions, style_dict))
         elif img['split'] == 'test':
-            test_id.append(img['filename'])
-            test_image_paths.append(path)
-            test_image_captions.append(captions)
-            test_styles.append(style_dict)
+            test_tup.append((img['filename'], path, captions, style_dict))
 
+    
     # sanity check
-    assert len(train_image_paths) == len(train_image_captions) == len(train_styles)
-    assert len(val_image_paths) == len(val_image_captions) == len(val_styles)
-    assert len(test_image_paths) == len(test_image_captions) == len(test_styles)
+    train_id, train_image_paths, train_image_captions, train_styles = zip(*train_tup)
+    val_id, val_image_paths, val_image_captions, val_styles = zip(*val_tup)
+    test_id, test_image_paths, test_image_captions, test_styles = zip(*test_tup)
+
+    assert len(train_id) == len(train_image_paths) == len(train_image_captions) == len(train_styles)
+    assert len(val_id) == len(val_image_paths) == len(val_image_captions) == len(val_styles)
+    assert len(test_id) == len(test_image_paths) == len(test_image_captions) == len(test_styles)
 
     # save id and styles data for train/ val/ test
     for partition in ['TRAIN', 'VAL', 'TEST']:
@@ -73,4 +74,6 @@ def create_nonimage_input(data, word_map, all_captions, base_filename, image_fol
         val = (val_image_paths, val_image_captions),
         test = (test_image_paths, test_image_captions)
     )
+
+    print('complete non-image input...')
     return partition_dict

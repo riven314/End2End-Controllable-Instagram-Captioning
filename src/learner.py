@@ -111,18 +111,22 @@ class Learner:
         log_softmax = nn.LogSoftmax()
 
         # Batches
-        for i, (imgs, caps, caplens, _, len_class, img_ids) in enumerate(self.train_loader):
+        for i, (imgs, caps, caplens, _, style_dicts, img_ids) in enumerate(self.train_loader):
             data_time.update(time.time() - start)
 
+            len_class = torch.LongTensor([d['length_class'] for d in style_dicts]).view(-1, 1)
+            is_emoji = torch.LongStorage([d['is_emoji'] for d in style_dicts]).view(-1, 1)
+            
             # Move to GPU, if available
             imgs = imgs.to(self.device)
             caps = caps.to(self.device)
             caplens = caplens.to(self.device)
             len_class = len_class.to(self.device)
+            is_emoji = is_emoji.to(self.device)
 
             # Forward prop.
             imgs = self.encoder(imgs)
-            scores, caps_sorted, decode_lengths, alphas, sort_ind = self.decoder(imgs, caps, caplens, len_class)
+            scores, caps_sorted, decode_lengths, alphas, sort_ind = self.decoder(imgs, caps, caplens, len_class, is_emoji)
 
             # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
             targets = caps_sorted[:, 1:]
@@ -203,18 +207,21 @@ class Learner:
         # solves the issue #57
         with torch.no_grad():
             # Batches
-            for i, (imgs, caps, caplens, allcaps, len_class, img_ids) in enumerate(self.val_loader):
+            for i, (imgs, caps, caplens, allcaps, style_dicts, img_ids) in enumerate(self.val_loader):
+                len_class = torch.LongTensor([d['length_class'] for d in style_dicts]).view(-1, 1)
+                is_emoji = torch.LongStorage([d['is_emoji'] for d in style_dicts]).view(-1, 1)
 
                 # Move to device, if available
                 imgs = imgs.to(self.device)
                 caps = caps.to(self.device)
                 caplens = caplens.to(self.device)
                 len_class = len_class.to(self.device)
+                is_emoji = is_emoji.to(self.device)
 
                 # Forward prop.
                 if self.encoder is not None:
                     imgs = self.encoder(imgs)
-                scores, caps_sorted, decode_lengths, alphas, sort_ind = self.decoder(imgs, caps, caplens, len_class)
+                scores, caps_sorted, decode_lengths, alphas, sort_ind = self.decoder(imgs, caps, caplens, len_class, is_emoji)
 
                 # Since we decoded starting with <start>, the targets are all words after <start>, up to <end>
                 targets = caps_sorted[:, 1:]

@@ -116,7 +116,7 @@ class DecoderWithAttention(nn.Module):
     """
 
     def __init__(self, attention_dim, embed_dim, decoder_dim, vocab_size, 
-                 encoder_dim = 2048, length_class_dim = 128, dropout = 0.5):
+                 encoder_dim = 2048, style_dim = 128, dropout = 0.5):
         """
         :param attention_dim: size of attention network
         :param embed_dim: embedding size
@@ -133,12 +133,12 @@ class DecoderWithAttention(nn.Module):
         self.decoder_dim = decoder_dim
         self.vocab_size = vocab_size
         self.dropout = dropout
-        self.length_class_embed_dim = length_class_dim
+        self.length_class_embed_dim = style_dim
 
         self.attention = Attention(encoder_dim, decoder_dim, attention_dim)  # attention network
 
         self.dropout = nn.Dropout(p=self.dropout)
-        self.decode_step = nn.LSTMCell(embed_dim + encoder_dim + length_class_dim, 
+        self.decode_step = nn.LSTMCell(embed_dim + encoder_dim + style_dim + style_dim, 
                                        decoder_dim, bias=True)  # decoding LSTMCell
         self.init_h = nn.Linear(encoder_dim, decoder_dim)  # linear layer to find initial hidden state of LSTMCell
         self.init_c = nn.Linear(encoder_dim, decoder_dim)  # linear layer to find initial cell state of LSTMCell
@@ -147,7 +147,8 @@ class DecoderWithAttention(nn.Module):
 
         # embedding layers
         self.embedding = nn.Embedding(vocab_size, embed_dim)  # embedding layer
-        self.length_class_embedding = nn.Embedding(3, length_class_dim)
+        self.length_class_embedding = nn.Embedding(3, style_dim)
+        self.is_emoji_embedding = nn.Embedding(2, style_dim)
 
         self.fc = nn.Linear(decoder_dim, vocab_size)  # linear layer to find scores over vocabulary
         self.init_weights()  # initialize some layers with the uniform distribution
@@ -162,6 +163,7 @@ class DecoderWithAttention(nn.Module):
     def _init_embedding(self):
         self.embedding.weight.data.uniform_(-0.1, 0.1)
         self.length_class_embedding.weight.data.uniform_(-0.1, 0.1)
+        self.is_emoji_embedding.weight.data.uniform_(-0.1, 0.1)
 
     def _init_fc(self):
         self.fc.bias.data.fill_(0)
@@ -198,14 +200,15 @@ class DecoderWithAttention(nn.Module):
         c = self.init_c(mean_encoder_out)
         return h, c
 
-    def forward(self, encoder_out, encoded_captions, caption_lengths, length_class):
+    def forward(self, encoder_out, encoded_captions, caption_lengths, length_class, is_emoji):
         """
         Forward propagation.
 
         :param encoder_out: encoded images, a tensor of dimension (batch_size, enc_image_size, enc_image_size, encoder_dim)
         :param encoded_captions: encoded captions, a tensor of dimension (batch_size, max_caption_length)
         :param caption_lengths: caption lengths, a tensor of dimension (batch_size, 1)
-        :param length_class: list of length class, a Long tensor of dim (batch_size)
+        :param length_class: a Long tensor of dim (batch_size, 1)
+        :param is_emoji: a Long tensor of dim (batch_size, 1)
         :return: scores for vocabulary, sorted encoded captions, decode lengths, weights, sort indices
         """
 
@@ -222,6 +225,7 @@ class DecoderWithAttention(nn.Module):
         encoder_out = encoder_out[sort_ind]
         encoded_captions = encoded_captions[sort_ind]
         length_class = length_class[sort_ind]
+        is_emoji = is_emoji[sort_ind]
 
         # Embedding
         embeddings = self.embedding(encoded_captions)  # (batch_size, max_caption_length, embed_dim)
@@ -229,6 +233,7 @@ class DecoderWithAttention(nn.Module):
         # style embedding
         length_class = length_class.squeeze()
         style_embedding = self.length_class_embedding(length_class)
+        is_emoji_embedding = self.is_emoji_embedding(is_emoji)
 
         # Initialize LSTM state
         h, c = self.init_hidden_state(encoder_out)  # (batch_size, decoder_dim)
@@ -254,7 +259,10 @@ class DecoderWithAttention(nn.Module):
             attention_weighted_encoding = gate * attention_weighted_encoding
 
             # concat with word embedding, image-attention encoding, style embedding
-            cat_embeddings = torch.cat([embeddings[:batch_size_t, t, :], style_embedding[:batch_size_t], attention_weighted_encoding], dim=1)
+            cat_embeddings = torch.cat([
+                embeddings[:batch_size_t, t, :], style_embedding[:batch_size_t], 
+                is_emoji_embedding[:batch_size_t], attention_weighted_encoding
+                ], dim=1)
 
             h, c = self.decode_step(cat_embeddings, (h[:batch_size_t], c[:batch_size_t]))  # (batch_size_t, decoder_dim)
             preds = self.fc(self.dropout(h))  # (batch_size_t, vocab_size)
