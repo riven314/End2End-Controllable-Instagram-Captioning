@@ -13,6 +13,8 @@ data/notebooks/.ipynb_checkpoints
 data/notebooks/*.model
 data/notebooks/*.json
 
+tests/*.json
+
 */.ipynb_checkpoints
 ckpts
 
