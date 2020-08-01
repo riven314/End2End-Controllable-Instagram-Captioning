@@ -10,7 +10,7 @@ import pandas as pd
 
 import emoji
 import spacy
-from spacy_hunspell import spaCyHunSpell
+#from spacy_hunspell import spaCyHunSpell
 from transformers import pipeline
 
 

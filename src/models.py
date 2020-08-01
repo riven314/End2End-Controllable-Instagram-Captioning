@@ -232,6 +232,7 @@ class DecoderWithAttention(nn.Module):
 
         # style embedding
         length_class = length_class.squeeze()
+        is_emoji = is_emoji.squeeze()
         style_embedding = self.length_class_embedding(length_class)
         is_emoji_embedding = self.is_emoji_embedding(is_emoji)
 

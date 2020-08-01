@@ -114,8 +114,8 @@ class Learner:
         for i, (imgs, caps, caplens, _, style_dicts, img_ids) in enumerate(self.train_loader):
             data_time.update(time.time() - start)
 
-            len_class = torch.LongTensor([d['length_class'] for d in style_dicts]).view(-1, 1)
-            is_emoji = torch.LongStorage([d['is_emoji'] for d in style_dicts]).view(-1, 1)
+            len_class = style_dicts['length_class'].view(-1, 1)
+            is_emoji = style_dicts['is_emoji'].view(-1, 1)
             
             # Move to GPU, if available
             imgs = imgs.to(self.device)
@@ -208,8 +208,8 @@ class Learner:
         with torch.no_grad():
             # Batches
             for i, (imgs, caps, caplens, allcaps, style_dicts, img_ids) in enumerate(self.val_loader):
-                len_class = torch.LongTensor([d['length_class'] for d in style_dicts]).view(-1, 1)
-                is_emoji = torch.LongStorage([d['is_emoji'] for d in style_dicts]).view(-1, 1)
+                len_class = style_dicts['length_class'].view(-1, 1)
+                is_emoji = style_dicts['is_emoji'].view(-1, 1)
 
                 # Move to device, if available
                 imgs = imgs.to(self.device)
