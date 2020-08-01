@@ -137,8 +137,9 @@ class Learner:
 
             # Add confidence penalty
             if self.confidence_c is not None:
-                tgt_batch_idx = scores.batch_sizes[:3].sum() # only consider predictions for first 3 words
-                probs = log_softmax(scores.data[:tgt_batch_idx]).exp()
+                #tgt_batch_idx = scores.batch_sizes[:3].sum() # only consider predictions for first 3 words
+                #probs = log_softmax(scores.data[:tgt_batch_idx]).exp()
+                probs = log_softmax(scores.data).exp()
                 entropies = Categorical(probs = probs).entropy()
                 loss -= self.confidence_c * entropies.mean()
 
@@ -229,8 +230,9 @@ class Learner:
 
                 # Add confidence penalty
                 if self.confidence_c is not None:            
-                    tgt_batch_idx = scores.batch_sizes[:3].sum() # only consider predictions for first 3 words
-                    probs = log_softmax(scores.data[:tgt_batch_idx]).exp()
+                    #tgt_batch_idx = scores.batch_sizes[:3].sum() # only consider predictions for first 3 words
+                    #probs = log_softmax(scores.data[:tgt_batch_idx]).exp()
+                    probs = log_softmax(scores.data).exp()
                     entropies = Categorical(probs = probs).entropy()
                     loss -= self.confidence_c * entropies.mean()
 

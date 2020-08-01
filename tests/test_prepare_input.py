@@ -4,7 +4,7 @@ from data.utils import read_json
 from src.word_map_utils import create_word_map_from_simple
 from src.word_map_utils import create_word_map_from_pretrained_wordpiece
 
-ig_json = './data/ig_json/mid_clean_wonumber.json'
+ig_json = './data/ig_json/full_clean_wonumber.json'
 output_folder = './tests'
 data = read_json(ig_json)
 
