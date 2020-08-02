@@ -2,12 +2,17 @@ import os
 import h5py
 import json
 
+from easydict import EasyDict as edict
+
 import torch
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset, DataLoader
 
 
 def get_dataloaders(cfg):
+    if isinstance(cfg, dict):
+        cfg = edict(cfg)
+
     normalize = transforms.Normalize(mean = [0.485, 0.456, 0.406],
                                      std = [0.229, 0.224, 0.225])
     train_dataset = CaptionDataset(cfg.data_folder, cfg.data_name, 'TRAIN', 

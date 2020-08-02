@@ -1,6 +1,8 @@
 import os
 import json
 
+from easydict import EasyDict as edict
+
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -8,6 +10,9 @@ import torchvision
 
 
 def get_encoder_decoder(cfg):
+    if isinstance(cfg, dict):
+        cfg = edict(cfg)
+
     with open(cfg.word_map_file, 'r') as f:
         word_map = json.load(f)
 

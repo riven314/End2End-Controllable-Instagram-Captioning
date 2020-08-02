@@ -33,7 +33,7 @@ def get_wp_tokenizer(data, emoji_set = None):
         print(f'total no. of emojis: {len(emoji_set)}')
     
     # extract emoji_set from word_map
-    elif 
+    else:
         print(f'total no. of emojis: {len(emoji_set)}')
 
     # setup tokenizer and add special tokens 

@@ -21,8 +21,8 @@ from src.utils import *
 from src.word_map_utils import get_wp_tokenizer
 
 
-checkpoint_dir = './ckpts/v14_wstyle_wp_full_entropy_3.0'
-data_folder = './data/meta_wstyle/data_mid_clean_wonumber_wp'
+checkpoint_dir = './ckpts/v17_wstyle_wp_no_entropy_bigmodel_wemojis'
+data_folder = './data/meta_wstyle/data_mid_clean_wonumber_wemojis_wp'
 data_name = 'flickr8k_1_cap_per_img_1_min_word_freq'
 checkpoint_file = os.path.join(checkpoint_dir, 'checkpoint_flickr8k_1_cap_per_img_1_min_word_freq.pth')
 word_map_file = f'{data_folder}/WORDMAP_{data_name}.json'
@@ -30,7 +30,7 @@ word_map_file = f'{data_folder}/WORDMAP_{data_name}.json'
 
 word_map = read_json(word_map_file)
 rev_word_map = {v: k for k, v in word_map.items()}
-emoji_set = [w for w in word_map_file.keys() if w.startswith(':') and w.endswith(':')]
+emoji_set = [w for w in word_map.keys() if w.startswith(':') and w.endswith(':')]
 vocab_size = len(word_map)
 
 cfg_path = os.path.join(checkpoint_dir, 'config.json')
@@ -47,7 +47,7 @@ encoder.eval()
 decoder.eval()
 
 
-def run_test_per_beamsize_style(beam_size, length_class, is_emoji,
+def run_test_per_beamsize_style(beam_size, length_class, emoji_class,
                                 data_type = 'TEST', n = -1, subword = False):
 
     assert data_type in ['TRAIN', 'VAL', 'TEST']
@@ -66,7 +66,7 @@ def run_test_per_beamsize_style(beam_size, length_class, is_emoji,
         tokenizer = get_wp_tokenizer(data = None, emoji_set = emoji_set)
 
     len_class = torch.as_tensor([length_class]).long().to(device)
-    is_emoji = torch.as_tensor([is_emoji]).long().to(device)
+    is_emoji = torch.as_tensor([emoji_class]).long().to(device)
 
     results = []
     for i, (image, caps, _, allcaps, style_dicts, img_ids) in enumerate(tqdm(dataloader)):
@@ -104,13 +104,6 @@ def run_test_per_beamsize_style(beam_size, length_class, is_emoji,
         complete_seqs = list()
         complete_seqs_scores = list()
 
-        len_class_embedding = decoder.length_class_embedding(len_class)
-        is_emoji_embedding = decoder.is_emoji_embedding(is_emoji)
-        
-        style_embed_dim = len_class_embedding.size(-1)
-        len_class_embedding = len_class_embedding.expand(k, style_embed_dim)
-        is_emoji_embedding = is_emoji_embedding.expand(k, style_embed_dim)
-
         # Start decoding
         step = 1
         with torch.no_grad():
@@ -124,6 +117,13 @@ def run_test_per_beamsize_style(beam_size, length_class, is_emoji,
                 awe, _ = decoder.attention(encoder_out, h)  # (s, encoder_dim), (s, num_pixels)
                 gate = decoder.sigmoid(decoder.f_beta(h))  # gating scalar, (s, encoder_dim)
                 awe = gate * awe
+
+                len_class_embedding = decoder.length_class_embedding(len_class)
+                is_emoji_embedding = decoder.is_emoji_embedding(is_emoji)
+        
+                style_embed_dim = len_class_embedding.size(-1)
+                len_class_embedding = len_class_embedding.expand(k, style_embed_dim)
+                is_emoji_embedding = is_emoji_embedding.expand(k, style_embed_dim)
 
                 # (s, decoder_dim)
                 h, c = decoder.decode_step(
@@ -195,7 +195,7 @@ def run_test_per_beamsize_style(beam_size, length_class, is_emoji,
             result = {
                 'img_id': img_ids[0], 'gt_length_class': gt_len_class, 'gt_is_emoji': gt_is_emoji, 
                 'data_type': data_type, 'gt_caption': img_caption, 
-                f'length_class_len{length_class:02}_emoji{is_emoji:02}': 'NA'
+                f'length_class_len{length_class:02}_emoji{emoji_class:02}': 'NA'
                 }
             results.append(result)
             continue
@@ -220,13 +220,14 @@ def run_test_per_beamsize_style(beam_size, length_class, is_emoji,
         else:
             img_caption = ' '.join([rev_word_map[s] for s in img_caption])
             predict = ' '.join([rev_word_map[s] for s in predict])
-
+        
+        predict = emoji.emojize(predict)
         gt_len_class = int(style_dicts['length_class'].cpu().squeeze())
         gt_is_emoji = int(style_dicts['is_emoji'].cpu().squeeze())
         result = {
             'img_id': img_ids[0], 'data_type': data_type,
             'gt_length_class': gt_len_class, 'gt_is_emoji': gt_is_emoji, 'gt_caption': img_caption, 
-            f'length_class_{length_class:02}_emoji_class_{is_emoji:02}': predict
+            f'length_class_{length_class:02}_emoji_class_{emoji_class:02}': predict
             }
         results.append(result)
     return results
@@ -243,7 +244,7 @@ if __name__ == '__main__':
                 print(f'data_type: {data_type}, beam size: {beam_size}, length class: {len_class}, emoji class: {emoji_class}')
                 results = run_test_per_beamsize_style(
                         beam_size, 
-                        length_class = len_class, is_emoji = emoji_class,
+                        length_class = len_class, emoji_class = emoji_class,
                         data_type = data_type, n = 200, subword = True
                         )
 
