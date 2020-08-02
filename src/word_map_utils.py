@@ -11,17 +11,30 @@ from data.utils import write_json
 from data.clean_raw_captions import extract_emoji
 
 
-def get_wp_tokenizer(data):
-    print('collecting all emojis of the data...')
-    emoji_set = set()
-    for id_dict in tqdm(data['images']):
-        caption = ' '.join(id_dict['sentences'][0]['tokens'])
-        emojis = extract_emoji(caption)
-        if emojis is None:
-            continue
-        emoji_set.update(emojis)
-    emoji_set = list([emoji.demojize(e) for e in emoji_set])
-    print(f'total no. of emojis: {len(emoji_set)}')
+def get_wp_tokenizer(data, emoji_set = None):
+    """
+    extract set of emoji from data (json dict from ig_json) OR  
+    specify the set of emoji in arg emoji_set
+    """
+    # data, emoji_set cant be both None, but either one must be None
+    assert bool(data) != bool(emoji_set)
+
+    # extract available emoji from data
+    if data is not None:
+        print('collecting all emojis of the data...')
+        emoji_set = set()
+        for id_dict in tqdm(data['images']):
+            caption = ' '.join(id_dict['sentences'][0]['tokens'])
+            emojis = extract_emoji(caption)
+            if emojis is None:
+                continue
+            emoji_set.update(emojis)
+        emoji_set = list([emoji.demojize(e) for e in emoji_set])
+        print(f'total no. of emojis: {len(emoji_set)}')
+    
+    # extract emoji_set from word_map
+    elif 
+        print(f'total no. of emojis: {len(emoji_set)}')
 
     # setup tokenizer and add special tokens 
     wp_tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
@@ -68,7 +81,7 @@ def create_word_map_from_pretrained_wordpiece(data, base_filename, output_folder
     :return word_map: subword vocab dict
     :all_captions: list of list (each are list of subwords)
     """
-    wp_tokenizer = get_wp_tokenizer(data)
+    wp_tokenizer = get_wp_tokenizer(data, emoji_set = None)
 
     subword_freq = Counter()
     all_captions = []

@@ -233,7 +233,7 @@ class DecoderWithAttention(nn.Module):
         # style embedding
         length_class = length_class.squeeze()
         is_emoji = is_emoji.squeeze()
-        style_embedding = self.length_class_embedding(length_class)
+        len_class_embedding = self.length_class_embedding(length_class)
         is_emoji_embedding = self.is_emoji_embedding(is_emoji)
 
         # Initialize LSTM state
@@ -261,7 +261,7 @@ class DecoderWithAttention(nn.Module):
 
             # concat with word embedding, image-attention encoding, style embedding
             cat_embeddings = torch.cat([
-                embeddings[:batch_size_t, t, :], style_embedding[:batch_size_t], 
+                embeddings[:batch_size_t, t, :], len_class_embedding[:batch_size_t], 
                 is_emoji_embedding[:batch_size_t], attention_weighted_encoding
                 ], dim=1)
 
@@ -303,14 +303,14 @@ class DecoderWithAttention(nn.Module):
             while True:
                 # get all required embeddings
                 embeddings = self.embedding(k_prev_words).squeeze(1)
-                style_embedding = self.length_class_embedding(len_class)
-                style_embedding = style_embedding.expand(k, self.length_class_embed_dim)
+                len_class_embedding = self.length_class_embedding(len_class)
+                len_class_embedding = len_class_embedding.expand(k, self.length_class_embed_dim)
                 awe, _ = self.attention(encoder_out, h)
                 gate = self.sigmoid(self.f_beta(h))
                 awe = gate * awe
 
                 # feed forward to get scores
-                h, c = self.decoder_step(torch.cat([embeddings, style_embedding, awe], dim = 1), (h, c)) # (total embedding dim, decoder_dim)
+                h, c = self.decoder_step(torch.cat([embeddings, len_class_embedding, awe], dim = 1), (h, c)) # (total embedding dim, decoder_dim)
                 scores = self.fc(h)
                 scores = F.log_softmax(scores, dim = 1)
 

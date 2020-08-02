@@ -14,7 +14,8 @@ import torchvision.transforms as transforms
 import emoji
 from transformers import AutoTokenizer
 
-from src.models import Encoder, DecoderWithAttention
+from data.utils import read_json
+from src.models import get_encoder_decoder
 from src.datasets import CaptionDataset
 from src.utils import *
 from src.word_map_utils import get_wp_tokenizer
@@ -26,28 +27,17 @@ data_name = 'flickr8k_1_cap_per_img_1_min_word_freq'
 checkpoint_file = os.path.join(checkpoint_dir, 'checkpoint_flickr8k_1_cap_per_img_1_min_word_freq.pth')
 word_map_file = f'{data_folder}/WORDMAP_{data_name}.json'
 
-with open(word_map_file, 'r') as j:
-    word_map = json.load(j)
+
+word_map = read_json(word_map_file)
 rev_word_map = {v: k for k, v in word_map.items()}
+emoji_set = [w for w in word_map_file.keys() if w.startswith(':') and w.endswith(':')]
+vocab_size = len(word_map)
 
 cfg_path = os.path.join(checkpoint_dir, 'config.json')
-with open(cfg_path, 'r') as f:
-    cfg = json.load(f)
+cfg = read_json(cfg_path)
 
-attention_dim = cfg['attention_dim']
-emb_dim = cfg['emb_dim']
-decoder_dim = cfg['decoder_dim']
-vocab_size = len(word_map) 
-dropout = cfg['dropout']
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-encoder = Encoder()
-decoder = DecoderWithAttention(attention_dim = attention_dim,
-                               embed_dim = emb_dim,
-                               decoder_dim = decoder_dim,
-                               vocab_size = len(word_map),
-                               dropout = dropout)
-
+encoder, decoder = get_encoder_decoder(cfg)
 checkpoint = torch.load(checkpoint_file)
 encoder.load_state_dict(checkpoint['encoder'])
 decoder.load_state_dict(checkpoint['decoder'])
@@ -57,14 +47,14 @@ encoder.eval()
 decoder.eval()
 
 
-def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n = -1, subword = False):
+def run_test_per_beamsize_style(beam_size, length_class, is_emoji,
+                                data_type = 'TEST', n = -1, subword = False):
+
     assert data_type in ['TRAIN', 'VAL', 'TEST']
     assert length_class in [0, 1, 2]
 
-    len_class = torch.as_tensor([length_class]).long().to(device)
-
     normalizer = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                    std=[0.229, 0.224, 0.225])
+                                      std=[0.229, 0.224, 0.225])
     tfms = transforms.Compose([normalizer])
     dataset = CaptionDataset(data_folder, data_name, data_type, transform = tfms)
     dataloader = DataLoader(dataset, batch_size = 1, 
@@ -73,10 +63,13 @@ def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n =
     
     tokenizer = None
     if subword:
-        tokenizer = get_wp_tokenizer()
+        tokenizer = get_wp_tokenizer(data = None, emoji_set = emoji_set)
+
+    len_class = torch.as_tensor([length_class]).long().to(device)
+    is_emoji = torch.as_tensor([is_emoji]).long().to(device)
 
     results = []
-    for i, (image, caps, _, allcaps, gt_len_class, img_ids) in enumerate(tqdm(dataloader)):
+    for i, (image, caps, _, allcaps, style_dicts, img_ids) in enumerate(tqdm(dataloader)):
         
         if i == n:
             break
@@ -111,6 +104,13 @@ def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n =
         complete_seqs = list()
         complete_seqs_scores = list()
 
+        len_class_embedding = decoder.length_class_embedding(len_class)
+        is_emoji_embedding = decoder.is_emoji_embedding(is_emoji)
+        
+        style_embed_dim = len_class_embedding.size(-1)
+        len_class_embedding = len_class_embedding.expand(k, style_embed_dim)
+        is_emoji_embedding = is_emoji_embedding.expand(k, style_embed_dim)
+
         # Start decoding
         step = 1
         with torch.no_grad():
@@ -121,16 +121,14 @@ def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n =
             while True:
 
                 embeddings = decoder.embedding(k_prev_words).squeeze(1)  # (s, embed_dim)
-                style_embedding = decoder.length_class_embedding(len_class)
-                style_embed_dim = style_embedding.size(-1)
-                style_embedding = style_embedding.expand(k, style_embed_dim)
-
                 awe, _ = decoder.attention(encoder_out, h)  # (s, encoder_dim), (s, num_pixels)
-
                 gate = decoder.sigmoid(decoder.f_beta(h))  # gating scalar, (s, encoder_dim)
                 awe = gate * awe
 
-                h, c = decoder.decode_step(torch.cat([embeddings, style_embedding, awe], dim = 1), (h, c))  # (s, decoder_dim)
+                # (s, decoder_dim)
+                h, c = decoder.decode_step(
+                    torch.cat([embeddings, len_class_embedding, is_emoji_embedding,  awe], dim = 1),
+                    (h, c)) 
 
                 scores = decoder.fc(h)  # (s, vocab_size)
                 scores = F.log_softmax(scores, dim = 1)
@@ -178,7 +176,7 @@ def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n =
                     break
                 step += 1
 
-        # skip if no sequence are complete within 50 steps
+        # handle corner case when prediction is failed (empty, or too long)
         if len(complete_seqs_scores) == 0:
             print(f'{img_ids[0]} has no complete sentence')
             img_cap = caps.tolist()[0]
@@ -192,9 +190,12 @@ def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n =
             else:
                 img_caption = ' '.join(img_caption)
             
+            gt_len_class = int(style_dicts['length_class'].cpu().squeeze())
+            gt_is_emoji = int(style_dicts['is_emoji'].cpu().squeeze())
             result = {
-                'img_id': img_ids[0], 'length_class': int(gt_len_class.cpu().squeeze()), 'data_type': data_type, 
-                'gt_caption': img_caption, f'length_class_{length_class}': 'NA'
+                'img_id': img_ids[0], 'gt_length_class': gt_len_class, 'gt_is_emoji': gt_is_emoji, 
+                'data_type': data_type, 'gt_caption': img_caption, 
+                f'length_class_len{length_class:02}_emoji{is_emoji:02}': 'NA'
                 }
             results.append(result)
             continue
@@ -219,10 +220,13 @@ def run_test_per_beamsize_style(beam_size, length_class, data_type = 'TEST', n =
         else:
             img_caption = ' '.join([rev_word_map[s] for s in img_caption])
             predict = ' '.join([rev_word_map[s] for s in predict])
-        
+
+        gt_len_class = int(style_dicts['length_class'].cpu().squeeze())
+        gt_is_emoji = int(style_dicts['is_emoji'].cpu().squeeze())
         result = {
-            'img_id': img_ids[0], 'length_class': int(gt_len_class.cpu().squeeze()), 'data_type': data_type,
-            'gt_caption': img_caption, f'length_class_{length_class}': predict
+            'img_id': img_ids[0], 'data_type': data_type,
+            'gt_length_class': gt_len_class, 'gt_is_emoji': gt_is_emoji, 'gt_caption': img_caption, 
+            f'length_class_{length_class:02}_emoji_class_{is_emoji:02}': predict
             }
         results.append(result)
     return results
@@ -235,18 +239,19 @@ if __name__ == '__main__':
         
         agg_results = []
         for len_class in [0, 1, 2]:
-            print(f'data_type: {data_type}, beam size: {beam_size}, length class: {len_class}')
-            results = run_test_per_beamsize_style(
-                    beam_size, len_class, 
-                    data_type = data_type, 
-                    n = 200, subword = True
-                    )
+            for emoji_class in [0, 1]:
+                print(f'data_type: {data_type}, beam size: {beam_size}, length class: {len_class}, emoji class: {emoji_class}')
+                results = run_test_per_beamsize_style(
+                        beam_size, 
+                        length_class = len_class, is_emoji = emoji_class,
+                        data_type = data_type, n = 200, subword = True
+                        )
 
-            if agg_results == []:
-                agg_results = results
-            else:
-                for i in range(len(agg_results)):
-                    agg_results[i].update(results[i])
+                if agg_results == []:
+                    agg_results = results
+                else:
+                    for i in range(len(agg_results)):
+                        agg_results[i].update(results[i])
 
         result_df = pd.DataFrame(agg_results)
         result_df.to_csv(result_csv, index = False)
