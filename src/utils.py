@@ -121,7 +121,7 @@ def create_input_files(dataset, karpathy_json_path, image_folder, min_word_freq,
                 # Save image to HDF5 file
                 images[i] = img
             # Sanity check
-            assert images.shape[0] * captions_per_image == len(enc_captions) == len(caplens)
+            #assert images.shape[0] * captions_per_image == len(enc_captions) == len(caplens)
     return None
 
 
