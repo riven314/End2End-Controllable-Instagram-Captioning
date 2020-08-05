@@ -2,12 +2,17 @@ import os
 import h5py
 import json
 
+from easydict import EasyDict as edict
+
 import torch
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset, DataLoader
 
 
 def get_dataloaders(cfg):
+    if isinstance(cfg, dict):
+        cfg = edict(cfg)
+
     normalize = transforms.Normalize(mean = [0.485, 0.456, 0.406],
                                      std = [0.229, 0.224, 0.225])
     train_dataset = CaptionDataset(cfg.data_folder, cfg.data_name, 'TRAIN', 
@@ -78,18 +83,20 @@ class CaptionDataset(Dataset):
         caplen = torch.LongTensor([self.caplens[i]])
 
         # load in style factors
-        len_class = self.styles[i]['length_class']
-        sentence_length = torch.LongTensor([len_class])
+        styles = self.styles[i]
+        #len_class = self.styles[i]['length_class']
+        #sentence_length = torch.LongTensor([len_class])
 
         img_id = self.ids[i]
 
         if self.split is 'TRAIN':
-            return img, caption, caplen, caption, sentence_length, img_id
+            return img, caption, caplen, caption, styles, img_id
         else:
             # For validation of testing, also return all 'captions_per_image' captions to find BLEU-4 score
             all_captions = torch.LongTensor(
-                self.captions[((i // self.cpi) * self.cpi):(((i // self.cpi) * self.cpi) + self.cpi)])
-            return img, caption, caplen, all_captions, sentence_length, img_id
+                self.captions[((i // self.cpi) * self.cpi):(((i // self.cpi) * self.cpi) + self.cpi)]
+                )
+            return img, caption, caplen, all_captions, styles, img_id
 
     def __len__(self):
         return self.dataset_size

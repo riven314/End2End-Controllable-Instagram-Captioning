@@ -10,7 +10,7 @@ import pandas as pd
 
 import emoji
 import spacy
-from spacy_hunspell import spaCyHunSpell
+#from spacy_hunspell import spaCyHunSpell
 from transformers import pipeline
 
 
@@ -48,7 +48,23 @@ def demojize(text):
     return emoji.demojize(text)
 
 
+def is_emoji(text):
+    boo = False
+    for c in text:
+        if c in emoji.UNICODE_EMOJI: 
+            boo = True
+    return boo
 
+
+def extract_emoji(text):
+    emojis = []
+    for c in text:
+        if c in emoji.UNICODE_EMOJI:
+            emojis.append(c)
+    out = None if len(emojis) == 0 else emojis
+    return out
+    
+    
 def replace_person_name(text):
     """ assume person name is correctly spelled """
     pass

@@ -11,6 +11,8 @@ from tqdm import tqdm
 import pandas as pd
 import numpy as np
 
+import emoji
+
 from data.utils import write_json, read_json
 from src.input_utils import create_nonimage_input
 from src.word_map_utils import create_word_map_from_simple, create_word_map_from_pretrained_wordpiece
@@ -18,7 +20,7 @@ from src.word_map_utils import create_word_map_from_simple, create_word_map_from
 
 
 def create_input_files(dataset, karpathy_json_path, image_folder, min_word_freq, 
-                       output_folder, max_len = 100, vocab_size = None):
+                       output_folder, max_len = 100, vocab_size = None, is_write_img = True):
     """
     Creates input files for training, validation, and test data.
 
@@ -37,16 +39,51 @@ def create_input_files(dataset, karpathy_json_path, image_folder, min_word_freq,
     data = read_json(karpathy_json_path)
 
     # create and save word_freq
-    word_map, all_captions = create_word_map_from_pretrained_wordpiece(
-                                data, base_filename, output_folder, 
-                                min_word_freq, max_len, vocab_size
-                            )
+    word_map, all_captions = create_word_map_from_pretrained_wordpiece(data, base_filename, output_folder, 
+                                                                       min_word_freq, max_len, vocab_size)
 
     # streamline data and write id, styles data
     partition_dict = create_nonimage_input(data, word_map, all_captions, base_filename, image_folder, output_folder)
     train_image_paths, train_image_captions = partition_dict['train']
     val_image_paths, val_image_captions = partition_dict['val']
     test_image_paths, test_image_captions = partition_dict['test']
+
+    # write encoded captions and cap lengths as json
+    for impaths, imcaps, split in [(train_image_paths, train_image_captions, 'TRAIN'),
+                                   (val_image_paths, val_image_captions, 'VAL'),
+                                   (test_image_paths, test_image_captions, 'TEST')]:
+        enc_captions, caplens = [], []
+        for i, path in enumerate(tqdm(impaths)):
+            # sample captions
+            if len(imcaps[i]) < captions_per_image:
+                captions = imcaps[i] + [choice(imcaps[i]) for _ in range(captions_per_image - len(imcaps[i]))]
+            else:
+                captions = sample(imcaps[i], k = captions_per_image)
+
+            # sanity check
+            assert len(captions) == captions_per_image
+
+            c = captions[0]
+            # Encode captions
+            enc_c = [word_map['<start>']] + [word_map.get(word, word_map['<unk>']) for word in c] + [
+                word_map['<end>']] + [word_map['<pad>']] * (max_len - len(c))
+
+            # Find caption lengths
+            c_len = len(c) + 2
+
+            enc_captions.append(enc_c)
+            caplens.append(c_len)
+
+            assert len(enc_captions) == len(caplens)
+
+        # write json
+        captions_json = os.path.join(output_folder, split + '_CAPTIONS_' + base_filename + '.json')
+        write_json(enc_captions, captions_json)
+        caplens_json = os.path.join(output_folder, split + '_CAPLENS_' + base_filename + '.json')
+        write_json(caplens, caplens_json)
+
+    if not is_write_img:
+        return None
 
     # sample captions for each image, save images to HDF5 file, and captions and their lengths to JSON files
     seed(123)
@@ -63,23 +100,12 @@ def create_input_files(dataset, karpathy_json_path, image_folder, min_word_freq,
 
             print("\nReading %s images and captions, storing to file...\n" % split)
 
-            enc_captions = []
-            caplens = []
-
             for i, path in enumerate(tqdm(impaths)):
-
-                # Sample captions
-                if len(imcaps[i]) < captions_per_image:
-                    captions = imcaps[i] + [choice(imcaps[i]) for _ in range(captions_per_image - len(imcaps[i]))]
-                else:
-                    captions = sample(imcaps[i], k=captions_per_image)
 
                 # Sanity check
                 assert len(captions) == captions_per_image
 
                 # Read images
-                #img = imread(impaths[i])
-                #img = Image.open(impaths[1])
                 img = cv2.imread(path)
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 if len(img.shape) == 2:
@@ -94,26 +120,8 @@ def create_input_files(dataset, karpathy_json_path, image_folder, min_word_freq,
 
                 # Save image to HDF5 file
                 images[i] = img
-
-                for j, c in enumerate(captions):
-                    # Encode captions
-                    enc_c = [word_map['<start>']] + [word_map.get(word, word_map['<unk>']) for word in c] + [
-                        word_map['<end>']] + [word_map['<pad>']] * (max_len - len(c))
-
-                    # Find caption lengths
-                    c_len = len(c) + 2
-
-                    enc_captions.append(enc_c)
-                    caplens.append(c_len)
-
             # Sanity check
-            assert images.shape[0] * captions_per_image == len(enc_captions) == len(caplens)
-
-            captions_json = os.path.join(output_folder, split + '_CAPTIONS_' + base_filename + '.json')
-            write_json(enc_captions, captions_json)
-
-            caplens_json = os.path.join(output_folder, split + '_CAPLENS_' + base_filename + '.json')
-            write_json(caplens, caplens_json)
+            #assert images.shape[0] * captions_per_image == len(enc_captions) == len(caplens)
     return None
 
 
