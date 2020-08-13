@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from src.dropouts import WeightDropout, RNNDropout, EmbeddingDropout
+from src.dropouts import WeightDropout, InputDropout, RNNDropout, EmbeddingDropout
 
 
 def test_WeightDropout():
@@ -64,6 +64,16 @@ def test_RNNDropout():
     assert not (dp_out == dp_wreset_out).all()
     assert (dp_wreset_out == dp_woreset_out).all()
 
-    from pdb import set_trace
-    set_trace()
 
+def test_InputDropout():
+    seq_len = 20
+    inp_dp = InputDropout(p = 0.8)
+    test_inp = torch.randn(8, seq_len, 10)
+    out = inp_dp(test_inp)
+    
+    prev_mask = None
+    for t in range(seq_len):
+        prev_mask = (out[:, t, :] == 0) if prev_mask is None else prev_mask
+        crt_mask = (out[:, t, :] == 0)
+        assert (prev_mask == crt_mask).all()
+        prev_mask = crt_mask

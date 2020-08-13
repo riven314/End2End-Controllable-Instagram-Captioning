@@ -37,6 +37,17 @@ class RNNDropout(nn.Module):
                 self.mask = dropout_mask(x.data, (x.size(0), x.size(1)), self.p) # (batch size, hidden dim)
         return x * self.mask
 
+class InputDropout(nn.Module):
+    """ with 1/(1-p) scaling """
+    def __init__(self, p = 0.5):
+        super(InputDropout, self).__init__()
+        self.p = p
+    
+    def forward(self, x):
+        if not self.training or self.p == 0.: 
+            return x
+
+        return x * dropout_mask(x.data, (x.size(0), 1, x.size(2)), self.p)
 
 class WeightDropout(nn.Module):
     def __init__(self, module, weight_p, layer_names = ['weight_hh']):
