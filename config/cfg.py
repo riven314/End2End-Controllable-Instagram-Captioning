@@ -5,8 +5,7 @@ import torch
 
 class Config:
     save_dir = './ckpts/v20_wstyle_wp_no_entropy_midmodel_wemojis_wdropout_mid'
-    #data_folder = '/userhome/34/h3509807/MadeWithML/a-PyTorch-Tutorial-to-Image-Captioning/data/meta_wstyle/data_mid_clean_wonumber_wemojis_wp'
-    data_folder = '/home/alex/Desktop/data_trial_wemojis'
+    data_folder = '/userhome/34/h3509807/MadeWithML/a-PyTorch-Tutorial-to-Image-Captioning/data/meta_wstyle/data_mid_clean_wonumber_wemojis_wp'
     #data_folder = '/home/alex/Desktop/data_mid_clean_wonumber'
     #data_folder = './data/meta_wstyle/data_trial_wemojis'
     data_name = 'flickr8k_1_cap_per_img_1_min_word_freq'
