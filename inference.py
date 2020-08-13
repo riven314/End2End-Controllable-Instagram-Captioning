@@ -21,8 +21,8 @@ from src.utils import *
 from src.word_map_utils import get_wp_tokenizer
 
 
-checkpoint_dir = './ckpts/v18_wstyle_wp_no_entropy_bigmodel_wemojis_full'
-data_folder = './data/meta_wstyle/data_full_clean_wonumber_wemojis_wp'
+checkpoint_dir = './ckpts/v19_wstyle_wp_no_entropy_midmodel_wemojis_mid'
+data_folder = './data/meta_wstyle/data_mid_clean_wonumber_wemojis_wp'
 data_name = 'flickr8k_1_cap_per_img_1_min_word_freq'
 checkpoint_file = os.path.join(checkpoint_dir, 'checkpoint_flickr8k_1_cap_per_img_1_min_word_freq.pth')
 word_map_file = f'{data_folder}/WORDMAP_{data_name}.json'

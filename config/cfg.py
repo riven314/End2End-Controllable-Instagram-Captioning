@@ -4,8 +4,8 @@ import json
 import torch
 
 class Config:
-    save_dir = './ckpts/v18_wstyle_wp_no_entropy_bigmodel_wemojis_full'
-    data_folder = '/userhome/34/h3509807/MadeWithML/a-PyTorch-Tutorial-to-Image-Captioning/data/meta_wstyle/data_full_clean_wonumber_wemojis_wp'
+    save_dir = './ckpts/v19_wstyle_wp_no_entropy_midmodel_wemojis_mid'
+    data_folder = '/userhome/34/h3509807/MadeWithML/a-PyTorch-Tutorial-to-Image-Captioning/data/meta_wstyle/data_mid_clean_wonumber_wemojis_wp'
     #data_folder = '/home/alex/Desktop/data_mid_clean_wonumber'
     #data_folder = './data/meta_wstyle/data_mid_clean_wonumber'
     data_name = 'flickr8k_1_cap_per_img_1_min_word_freq'
@@ -17,11 +17,11 @@ class Config:
     
     attention_dim = 512
     emb_dim = 512
-    decoder_dim = 1024
+    decoder_dim = 512
     dropout = 0.5
 
     device = 'cuda' # 'cpu'
-    epochs = 40
+    epochs = 25
     workers = 1
     batch_size = 128
 
