@@ -18,5 +18,7 @@ tests/*.json
 */.ipynb_checkpoints
 ckpts
 
+.pytest_cache
+
 .vscode
 .idea
