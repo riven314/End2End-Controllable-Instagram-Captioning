@@ -19,6 +19,7 @@ def test_WeightDropout():
     assert dp_lstm.weight_hh_raw.requires_grad is True
 
     # check dropout mask is applied on target weight matrices with proper scaling
+    # both nn.Dropout and F.Dropout has scaling applied
     weight_before = dp_lstm.module.weight_hh.data.clone()
     h, c = dp_lstm(test_inp, (test_h, test_c), reset_mask = True)
     weight_after_reset = dp_lstm.module.weight_hh.data.clone()
@@ -35,6 +36,14 @@ def test_WeightDropout():
     h, c = dp_lstm(test_inp, (test_h, test_c), reset_mask = False)
     weight_without_reset = dp_lstm.module.weight_hh.data.clone()
     assert (weight_without_reset == weight_after_reset).all()
+
+    # check in validation mode, nn.Tensor + no dropout applied + no scaling
+    dp_lstm.eval()
+    with torch.no_grad():
+        h, c = dp_lstm(test_inp, (test_h, test_c), reset_mask = False)
+        assert (dp_lstm.module.weight_hh == dp_lstm.weight_hh_raw).all()
+        h, c = dp_lstm(test_inp, (test_h, test_c), reset_mask = True)
+        assert (dp_lstm.module.weight_hh == dp_lstm.weight_hh_raw).all()
 
 
 def test_EmbeddingDropout():
