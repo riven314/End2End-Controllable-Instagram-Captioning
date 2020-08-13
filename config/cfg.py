@@ -4,10 +4,10 @@ import json
 import torch
 
 class Config:
-    save_dir = './ckpts/v18_wstyle_wp_no_entropy_bigmodel_wemojis_full'
-    data_folder = '/userhome/34/h3509807/MadeWithML/a-PyTorch-Tutorial-to-Image-Captioning/data/meta_wstyle/data_full_clean_wonumber_wemojis_wp'
+    save_dir = './ckpts/v20_wstyle_wp_no_entropy_midmodel_wemojis_wdropout_mid'
+    data_folder = '/userhome/34/h3509807/MadeWithML/a-PyTorch-Tutorial-to-Image-Captioning/data/meta_wstyle/data_mid_clean_wonumber_wemojis_wp'
     #data_folder = '/home/alex/Desktop/data_mid_clean_wonumber'
-    #data_folder = './data/meta_wstyle/data_mid_clean_wonumber'
+    #data_folder = './data/meta_wstyle/data_trial_wemojis'
     data_name = 'flickr8k_1_cap_per_img_1_min_word_freq'
     #checkpoint_file = './ckpts/v8/BEST_checkpoint_flickr8k_1_cap_per_img_1_min_word_freq.pth'
     checkpoint_file = None
@@ -17,12 +17,14 @@ class Config:
     
     attention_dim = 512
     emb_dim = 512
-    decoder_dim = 1024
-    dropout = 0.5
+    decoder_dim = 512
+    dropout = 0.5 # appled on unregularized decoder
+    #regularized_decoder = None # if dict then regularized decode is used
+    regularized_decoder = dict(fc_p = 0.3, embed_p = 0.1, weight_p = 0.5, input_p = 0.6)
 
     device = 'cuda' # 'cpu'
     epochs = 40
-    workers = 1
+    workers = 0
     batch_size = 128
 
     optimizer = 'ranger'
