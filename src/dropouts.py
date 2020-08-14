@@ -75,7 +75,7 @@ class WeightDropout(nn.Module):
             setattr(self.module, layer, F.dropout(raw_w.data, p = self.weight_p, training = False))
         if hasattr(self.module, 'reset'): self.module.reset()
 
-    def forward(self, *args, reset_mask):
+    def forward(self, *args, reset_mask = True):
         if reset_mask and self.training:
             self._setweights()
         elif not self.training:

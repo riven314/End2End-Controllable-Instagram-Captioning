@@ -24,7 +24,7 @@ class Config:
 
     device = 'cuda' # 'cpu'
     epochs = 40
-    workers = 0
+    workers = 1
     batch_size = 128
 
     optimizer = 'ranger'
