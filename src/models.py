@@ -25,6 +25,7 @@ def get_encoder_decoder(cfg):
         decoder = DecoderWithAttention(attention_dim = cfg.attention_dim,
                                     embed_dim = cfg.emb_dim,
                                     decoder_dim = cfg.decoder_dim,
+                                    style_dim = cfg.style_dim,
                                     vocab_size = len(word_map),
                                     dropout = cfg.dropout)
     else:
@@ -34,6 +35,7 @@ def get_encoder_decoder(cfg):
         decoder = RegularizedDecoderWithAttention(attention_dim = cfg.attention_dim,
                                                   embed_dim = cfg.emb_dim,
                                                   decoder_dim = cfg.decoder_dim,
+                                                  style_dim = cfg.style_dim,
                                                   vocab_size = len(word_map),
                                                   fc_p = fc_p, embed_p = embed_p,
                                                   weight_p = weight_p, input_p = input_p)

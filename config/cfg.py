@@ -18,12 +18,13 @@ class Config:
     attention_dim = 512
     emb_dim = 512
     decoder_dim = 512
+    style_dim = 128
     dropout = 0.5 # appled on unregularized decoder
     #regularized_decoder = None # if dict then regularized decode is used
     regularized_decoder = dict(fc_p = 0.3, embed_p = 0.1, weight_p = 0.5, input_p = 0.6)
 
     device = 'cuda' # 'cpu'
-    epochs = 40
+    epochs = 25
     workers = 1
     batch_size = 128
 
