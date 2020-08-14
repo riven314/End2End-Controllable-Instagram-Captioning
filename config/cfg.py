@@ -4,7 +4,7 @@ import json
 import torch
 
 class Config:
-    save_dir = './ckpts/v20_wstyle_wp_no_entropy_midmodel_wemojis_wdropout_mid'
+    save_dir = './ckpts/v22_bigmodel_mid_newdropout'
     data_folder = '/userhome/34/h3509807/MadeWithML/a-PyTorch-Tutorial-to-Image-Captioning/data/meta_wstyle/data_mid_clean_wonumber_wemojis_wp'
     #data_folder = '/home/alex/Desktop/data_mid_clean_wonumber'
     #data_folder = './data/meta_wstyle/data_trial_wemojis'
@@ -17,14 +17,14 @@ class Config:
     
     attention_dim = 512
     emb_dim = 512
-    decoder_dim = 512
+    decoder_dim = 1024
     style_dim = 128
     dropout = 0.5 # appled on unregularized decoder
     #regularized_decoder = None # if dict then regularized decode is used
-    regularized_decoder = dict(fc_p = 0.3, embed_p = 0.1, weight_p = 0.5, input_p = 0.6)
+    regularized_decoder = dict(embed_p = 0.05, weight_p = 0.4, input_p = 0.3, output_p = 0.3)
 
     device = 'cuda' # 'cpu'
-    epochs = 25
+    epochs = 30
     workers = 1
     batch_size = 128
 

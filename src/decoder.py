@@ -44,7 +44,6 @@ class Attention(nn.Module):
 
 class DecoderWithAttention(nn.Module):
     """ Decoder without regularization """
-
     def __init__(self, attention_dim, embed_dim, decoder_dim, vocab_size, 
                  encoder_dim = 2048, style_dim = 128, dropout = 0.5):
         """
@@ -208,7 +207,7 @@ class RegularizedDecoderWithAttention(nn.Module):
 
     def __init__(self, attention_dim, embed_dim, decoder_dim, vocab_size, 
                  encoder_dim = 2048, style_dim = 128, 
-                 fc_p = 0.3, embed_p = 0.1, weight_p = 0.5, input_p = 0.6):
+                 embed_p = 0.1, weight_p = 0.5, input_p = 0.6, output_p = 0.3):
         """
         :param attention_dim: size of attention network
         :param embed_dim: embedding size
@@ -247,8 +246,8 @@ class RegularizedDecoderWithAttention(nn.Module):
         self.init_weights()  # initialize some layers with the uniform distribution
 
         # dropout layers
-        self.input_dp = InputDropout(p = input_p)
-        self.fc_dp = nn.Dropout(p = fc_p)
+        self.input_dp = RNNDropout(p = input_p)
+        self.output_dp = RNNDropout(p = output_p)
 
 
     def init_weights(self):
@@ -325,7 +324,7 @@ class RegularizedDecoderWithAttention(nn.Module):
         is_emoji = is_emoji[sort_ind]
 
         # Embedding
-        embeddings = self.input_dp(self.embedding_dp(encoded_captions))  # (batch_size, max_caption_length, embed_dim)
+        embeddings = self.embedding_dp(encoded_captions)  # (batch_size, max_caption_length, embed_dim)
 
         # style embedding
         length_class = length_class.squeeze()
@@ -335,7 +334,6 @@ class RegularizedDecoderWithAttention(nn.Module):
 
         # Initialize LSTM state
         h, c = self.init_hidden_state(encoder_out)  # (batch_size, decoder_dim)
-
 
         # We won't decode at the <end> position, since we've finished generating as soon as we generate <end>
         # So, decoding lengths are actual lengths - 1
@@ -358,17 +356,24 @@ class RegularizedDecoderWithAttention(nn.Module):
             attention_weighted_encoding = gate * attention_weighted_encoding
 
             # concat with word embedding, image-attention encoding, style embedding
-            cat_embeddings = torch.cat([
-                embeddings[:batch_size_t, t, :], len_class_embedding[:batch_size_t], 
-                is_emoji_embedding[:batch_size_t], attention_weighted_encoding
-                ], dim=1)
+            
+            reset_input_mask = True if t == 0 else False
+            style_embeddings = torch.cat([
+                embeddings[:batch_size_t, t, :], 
+                len_class_embedding[:batch_size_t], 
+                is_emoji_embedding[:batch_size_t]
+            ], dim = 1)
+            dp_style_embeddings = self.input_dp(style_embeddings, reset_mask = reset_input_mask)
+            cat_embeddings = torch.cat([dp_style_embeddings, attention_weighted_encoding], dim = 1)
             
             reset_decoder_mask = True if t == 0 else False
             # (batch_size_t, decoder_dim)
             h, c = self.decode_step_dp(cat_embeddings, 
                                        (h[:batch_size_t], c[:batch_size_t]), 
                                        reset_mask = reset_decoder_mask)  
-            preds = self.fc(self.fc_dp(h))  # (batch_size_t, vocab_size)
+            
+            reset_output_mask = True if t == 0 else False
+            preds = self.fc(self.output_dp(h, reset_mask = reset_output_mask))  # (batch_size_t, vocab_size)
             predictions[:batch_size_t, t, :] = preds
             alphas[:batch_size_t, t, :] = alpha
 

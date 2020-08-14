@@ -26,16 +26,19 @@ class RNNDropout(nn.Module):
         self.p = p
     
     def forward(self, x, reset_mask):
+        batch_size = x.size(0)
+
         if not self.training or self.p == 0:
             return x
-
+        
         # flag to use preceding dropout mask or a new mask
         if reset_mask:
-            self.mask = dropout_mask(x.data, (x.size(0), x.size(1)), self.p) # (batch size, hidden dim)
+            self.mask = dropout_mask(x.data, (batch_size, x.size(1)), self.p) # (batch size, hidden dim)
         else:
             if not hasattr(self, 'mask'):
-                self.mask = dropout_mask(x.data, (x.size(0), x.size(1)), self.p) # (batch size, hidden dim)
-        return x * self.mask
+                self.mask = dropout_mask(x.data, (batch_size, x.size(1)), self.p) # (batch size, hidden dim)
+        return x * self.mask[:batch_size]
+
 
 class InputDropout(nn.Module):
     """ with 1/(1-p) scaling """
