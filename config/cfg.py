@@ -21,7 +21,7 @@ class Config:
     style_dim = 128
     dropout = 0.5 # appled on unregularized decoder
     #regularized_decoder = None # if dict then regularized decode is used
-    regularized_decoder = dict(embed_p = 0.05, weight_p = 0.4, input_p = 0.3, output_p = 0.3)
+    regularized_decoder = dict(embed_p = 0.1, weight_p = 0.4, input_p = 0.3, output_p = 0.3)
 
     device = 'cuda' # 'cpu'
     epochs = 30
