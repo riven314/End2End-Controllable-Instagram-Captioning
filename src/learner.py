@@ -84,7 +84,6 @@ class Learner:
                     adjust_learning_rate(self.encoder_optimizer, self.adjust_step)
 
             self.train_one_epoch()
-
             current_bleu4 = self.val_one_epoch()
             is_best = current_bleu4 > self.best_bleu4
             if not is_best:
@@ -92,6 +91,7 @@ class Learner:
                 print(f"\nEpochs since last improvement: {self.epochs_since_improvement}")
             else:
                 self.epochs_since_improvement = 0
+                self.best_bleu4 = current_bleu4
 
             if self.test_loader is not None:
                 self.test_one_epoch()
@@ -284,7 +284,7 @@ class Learner:
                 assert len(references) == len(hypotheses)
 
         # Calculate BLEU-4 scores
-        bleu4 = corpus_bleu(references, hypotheses)
+        bleu4 = corpus_bleu(references, hypotheses, weights = [1/3, 1/3, 1/3])
 
         print('\n * LOSS - {loss.avg:.3f}, TOP-5 ACCURACY - {top5.avg:.3f}, BLEU-4 - {bleu}\n'.format(
             loss = losses, top5 = top5accs, bleu = bleu4

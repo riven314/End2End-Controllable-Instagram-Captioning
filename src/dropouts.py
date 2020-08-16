@@ -26,16 +26,19 @@ class RNNDropout(nn.Module):
         self.p = p
     
     def forward(self, x, reset_mask):
+        batch_size = x.size(0)
+
         if not self.training or self.p == 0:
             return x
-
+        
         # flag to use preceding dropout mask or a new mask
         if reset_mask:
-            self.mask = dropout_mask(x.data, (x.size(0), x.size(1)), self.p) # (batch size, hidden dim)
+            self.mask = dropout_mask(x.data, (batch_size, x.size(1)), self.p) # (batch size, hidden dim)
         else:
             if not hasattr(self, 'mask'):
-                self.mask = dropout_mask(x.data, (x.size(0), x.size(1)), self.p) # (batch size, hidden dim)
-        return x * self.mask
+                self.mask = dropout_mask(x.data, (batch_size, x.size(1)), self.p) # (batch size, hidden dim)
+        return x * self.mask[:batch_size]
+
 
 class InputDropout(nn.Module):
     """ with 1/(1-p) scaling """
@@ -65,17 +68,22 @@ class WeightDropout(nn.Module):
     def _setweights(self):
         for layer in self.layer_names:
             raw_w = getattr(self, f'{layer}_raw')
+            # note 1: when self.training = False, F.dropout disappear, thus nn.Parameter is set!!
+            # note 2: F.dropout imposes scaling on non-masked entry
             setattr(self.module, layer, F.dropout(raw_w, p = self.weight_p, training = self.training))
 
     def reset(self):
         for layer in self.layer_names:
             raw_w = getattr(self, f'{layer}_raw')
-            setattr(self.module, layer, F.dropout(raw_w.data, p=self.weight_p, training=False))
+            setattr(self.module, layer, F.dropout(raw_w.data, p = self.weight_p, training = False))
         if hasattr(self.module, 'reset'): self.module.reset()
 
-    def forward(self, *args, reset_mask):
-        if reset_mask:
+    def forward(self, *args, reset_mask = True):
+        if reset_mask and self.training:
             self._setweights()
+        elif not self.training:
+            self.reset()
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             return self.module.forward(*args)

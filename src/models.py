@@ -25,18 +25,20 @@ def get_encoder_decoder(cfg):
         decoder = DecoderWithAttention(attention_dim = cfg.attention_dim,
                                     embed_dim = cfg.emb_dim,
                                     decoder_dim = cfg.decoder_dim,
+                                    style_dim = cfg.style_dim,
                                     vocab_size = len(word_map),
                                     dropout = cfg.dropout)
     else:
         dropout_dict = cfg.regularized_decoder
-        fc_p, embed_p  = dropout_dict['fc_p'], dropout_dict['embed_p']
-        weight_p, input_p = dropout_dict['weight_p'], dropout_dict['input_p']
+        embed_p, weight_p  = dropout_dict['embed_p'], dropout_dict['weight_p']
+        input_p, output_p = dropout_dict['input_p'], dropout_dict['output_p']
         decoder = RegularizedDecoderWithAttention(attention_dim = cfg.attention_dim,
                                                   embed_dim = cfg.emb_dim,
                                                   decoder_dim = cfg.decoder_dim,
+                                                  style_dim = cfg.style_dim,
                                                   vocab_size = len(word_map),
-                                                  fc_p = fc_p, embed_p = embed_p,
-                                                  weight_p = weight_p, input_p = input_p)
+                                                  embed_p = embed_p, weight_p = weight_p, 
+                                                  input_p = input_p, output_p = output_p)
 
     if cfg.checkpoint_file is not None:
         assert os.path.isfile(cfg.checkpoint_file)

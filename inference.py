@@ -21,7 +21,7 @@ from src.utils import *
 from src.word_map_utils import get_wp_tokenizer
 
 
-checkpoint_dir = './ckpts/v19_wstyle_wp_no_entropy_midmodel_wemojis_mid'
+checkpoint_dir = './ckpts/v24_bigmodel_mid_heavydropout_1024embed'
 data_folder = './data/meta_wstyle/data_mid_clean_wonumber_wemojis_wp'
 data_name = 'flickr8k_1_cap_per_img_1_min_word_freq'
 checkpoint_file = os.path.join(checkpoint_dir, 'checkpoint_flickr8k_1_cap_per_img_1_min_word_freq.pth')
@@ -47,8 +47,11 @@ encoder.eval()
 decoder.eval()
 
 
-def run_test_per_beamsize_style(beam_size, length_class, emoji_class,
-                                data_type = 'TEST', n = -1, subword = False):
+def run_test_per_beamsize_style(
+    beam_size, length_class, emoji_class,
+    data_type = 'TEST', n = -1, 
+    subword = False, regularized_dropout = True
+    ):
 
     assert data_type in ['TRAIN', 'VAL', 'TEST']
     assert length_class in [0, 1, 2]
@@ -69,6 +72,7 @@ def run_test_per_beamsize_style(beam_size, length_class, emoji_class,
     is_emoji = torch.as_tensor([emoji_class]).long().to(device)
 
     results = []
+    decode_step = decoder.decode_step_dp if regularized_dropout else decoder.decode_step
     for i, (image, caps, _, allcaps, style_dicts, img_ids) in enumerate(tqdm(dataloader)):
         
         if i == n:
@@ -112,7 +116,6 @@ def run_test_per_beamsize_style(beam_size, length_class, emoji_class,
         # s is a number less than or equal to k, because sequences are removed from this process once they hit <end>
         with torch.no_grad():
             while True:
-
                 embeddings = decoder.embedding(k_prev_words).squeeze(1)  # (s, embed_dim)
                 awe, _ = decoder.attention(encoder_out, h)  # (s, encoder_dim), (s, num_pixels)
                 gate = decoder.sigmoid(decoder.f_beta(h))  # gating scalar, (s, encoder_dim)
@@ -126,9 +129,10 @@ def run_test_per_beamsize_style(beam_size, length_class, emoji_class,
                 is_emoji_embedding = is_emoji_embedding.expand(k, style_embed_dim)
 
                 # (s, decoder_dim)
-                h, c = decoder.decode_step(
+                h, c = decode_step(
                     torch.cat([embeddings, len_class_embedding, is_emoji_embedding,  awe], dim = 1),
-                    (h, c)) 
+                    (h, c)
+                    )
 
                 scores = decoder.fc(h)  # (s, vocab_size)
                 scores = F.log_softmax(scores, dim = 1)
@@ -244,8 +248,8 @@ if __name__ == '__main__':
                 print(f'data_type: {data_type}, beam size: {beam_size}, length class: {len_class}, emoji class: {emoji_class}')
                 results = run_test_per_beamsize_style(
                         beam_size, 
-                        length_class = len_class, emoji_class = emoji_class,
-                        data_type = data_type, n = 200, subword = True
+                        length_class = len_class, emoji_class = emoji_class, 
+                        data_type = data_type, n = 200, subword = True, regularized_dropout = True
                         )
 
                 if agg_results == []:
