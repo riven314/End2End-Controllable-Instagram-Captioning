@@ -4,7 +4,7 @@ import json
 import torch
 
 class Config:
-    save_dir = './ckpts/v22_bigmodel_mid_newdropout'
+    save_dir = './ckpts/v24_bigmodel_mid_heavydropout_1024embed'
     data_folder = '/userhome/34/h3509807/MadeWithML/a-PyTorch-Tutorial-to-Image-Captioning/data/meta_wstyle/data_mid_clean_wonumber_wemojis_wp'
     #data_folder = '/home/alex/Desktop/data_mid_clean_wonumber'
     #data_folder = './data/meta_wstyle/data_trial_wemojis'
@@ -16,15 +16,15 @@ class Config:
     word_map_file = f'{data_folder}/WORDMAP_{data_name}.json'
     
     attention_dim = 512
-    emb_dim = 512
+    emb_dim = 1024
     decoder_dim = 1024
     style_dim = 128
     dropout = 0.5 # appled on unregularized decoder
     #regularized_decoder = None # if dict then regularized decode is used
-    regularized_decoder = dict(embed_p = 0.1, weight_p = 0.4, input_p = 0.3, output_p = 0.3)
+    regularized_decoder = dict(embed_p = 0.10, weight_p = 0.5, input_p = 0.4, output_p = 0.4)
 
     device = 'cuda' # 'cpu'
-    epochs = 30
+    epochs = 40
     workers = 1
     batch_size = 128
 
