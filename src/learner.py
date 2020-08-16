@@ -91,6 +91,7 @@ class Learner:
                 print(f"\nEpochs since last improvement: {self.epochs_since_improvement}")
             else:
                 self.epochs_since_improvement = 0
+                self.best_bleu4 = current_bleu4
 
             if self.test_loader is not None:
                 self.test_one_epoch()
